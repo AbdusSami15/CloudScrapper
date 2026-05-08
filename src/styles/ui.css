@@ -1,0 +1,145 @@
+:root {
+    --ui-scale: 1;
+    --sky-blue: #87ceeb;
+    --dark-bg: #0a1628;
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+    
+    --glass-bg: rgba(15, 23, 42, 0.75);
+    --glass-border: rgba(148, 163, 184, 0.15);
+    --accent-success: #22c55e;
+    --accent-warning: #facc15;
+    --accent-danger: #f43f5e;
+    --accent-primary: #a855f7;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ─── Glassmorphism ───────────────────────────────────────────────────────── */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Orientation Lock ────────────────────────────────────────────────────── */
+#orientation-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(10, 22, 40, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    pointer-events: auto;
+}
+
+#orientation-lock .orientation-card {
+    width: min(380px, 100%);
+    padding: 28px 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    text-align: center;
+}
+
+#orientation-lock .orientation-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    display: block;
+    animation: rotate-hint 2s ease-in-out infinite;
+}
+
+@keyframes rotate-hint {
+    0%, 100% { transform: rotate(0deg);   }
+    40%       { transform: rotate(90deg);  }
+    60%       { transform: rotate(90deg);  }
+}
+
+#orientation-lock .orientation-title {
+    font-family: 'Tilt Warp', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+#orientation-lock .orientation-subtitle {
+    font-family: 'Tilt Warp', sans-serif;
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+/* Show lock overlay on mobile/tablet landscape (≤ 1024px wide side) */
+@media (orientation: landscape) and (max-width: 1024px) {
+    #orientation-lock {
+        display: flex;
+    }
+
+    #game-root {
+        visibility: hidden;
+    }
+}
+
+/* ─── Native Input Styling ────────────────────────────────────────────────── */
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: #334155;
+    border-radius: 3px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -7px;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    background: #334155;
+    border-radius: 3px;
+}
+
+input[type=range]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
