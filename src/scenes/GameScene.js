@@ -192,6 +192,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.logoImage) this.logoImage.setVisible(true);
     if (this.upperLogo) this.upperLogo.setVisible(true);
     this.cloudManager?.reset();
+    this.uiManager.moveStatusToBetting();
   }
 
   _enterRoundVisuals() {
@@ -201,6 +202,8 @@ export default class GameScene extends Phaser.Scene {
     // Hide upper logo in portrait mode during gameplay
     const isPortrait = this.scale.height >= this.scale.width;
     if (this.upperLogo && isPortrait) this.upperLogo.setVisible(false);
+
+    this.uiManager.moveStatusToGameplay();
   }
 
   bindInput() {

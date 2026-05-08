@@ -12,23 +12,22 @@ window.addEventListener("load", () => {
   const isMobileLike  = isPortrait && isSmallScreen;
 
   // ── Layer 4: Resolution management ───────────────────────────────────────
-  // Using native devicePixelRatio for maximum HD clarity on all screens
-  const renderResolution = Math.max(1, window.devicePixelRatio || 1);
+  // Use devicePixelRatio for crisp HD rendering (cap at 2 to avoid GPU overload)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  // ── Layer 2: Adaptive Phaser scaling ────────────────────────────────────
-  // RESIZE on all devices: canvas === viewport, no overflow, no clipping.
-  // rx/ry/rs utilities in ScreenUtil automatically adapt every game element
-  // to whatever viewport size the user has (portrait mobile or landscape PC).
   const config = {
     type:   Phaser.AUTO,
     parent: "game-root",
     width:  540,
     height: 960,
-    resolution: renderResolution,
+    resolution: dpr,
+    pixelArt: false,
     render: {
-      antialias:   true,
-      antialiasGL: true,
-      roundPixels: false
+      antialias:      true,
+      antialiasGL:    true,
+      roundPixels:    false,
+      desynchronized: true,
+      mipmapFilter:   "LINEAR_MIPMAP_LINEAR"
     },
     backgroundColor: "#020617",
     scale: {

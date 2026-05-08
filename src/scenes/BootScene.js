@@ -6,6 +6,22 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
+    // ── Update HTML loading screen from Phaser progress ─────────────────
+    const statusEl = document.getElementById("load-status");
+    const barFillEl = document.getElementById("load-bar-fill");
+
+    this.load.on("progress", (value) => {
+      const pct = Math.round(value * 100);
+      if (statusEl) statusEl.textContent = `PREPARING GAME ASSETS (${pct}%)`;
+      if (barFillEl) barFillEl.style.width = `${pct}%`;
+    });
+
+    this.load.on("complete", () => {
+      if (statusEl) statusEl.textContent = "READY!";
+      if (barFillEl) barFillEl.style.width = "100%";
+    });
+
+    // ── Asset Loading ───────────────────────────────────────────────────
     this.load.image(AssetKeys.BG_SKY,    "assets/bg/sky.png");
     this.load.image(AssetKeys.BG_CITY,   "assets/bg/city.png");
     this.load.image(AssetKeys.BG_GROUND, "assets/bg/ground.png");
@@ -14,7 +30,6 @@ export default class BootScene extends Phaser.Scene {
     this.load.image(AssetKeys.CLOUD_BAD, "assets/thunder/thunder-1.png");
     this.load.image(AssetKeys.CLOUD_BROKEN, "assets/clouds/brokenclouds.png");
 
-    // Cloud v2 animation frames
     for (let i = 1; i <= 9; i++) {
       this.load.image(AssetKeys[`CLOUD_V2_${i}`], `assets/Cloud-v2/Cloud-v2-${i}.png`);
     }
@@ -52,22 +67,25 @@ export default class BootScene extends Phaser.Scene {
       type: "mp3"
     });
 
-    // Debug logging
     this.load.on("loaderror", (file) => {
       console.error("Phaser Load Error:", file.src, file.key);
-    });
-    this.load.on("filecomplete-audio-" + AssetKeys.SFX_CLICK, () => {
-      console.log("Click sound loaded successfully");
-    });
-    this.load.on("filecomplete-audio-" + AssetKeys.SFX_JUMP, () => {
-      console.log("Jump sound loaded successfully");
-    });
-    this.load.on("filecomplete-audio-" + AssetKeys.MUSIC_BG, () => {
-      console.log("BG Music loaded successfully");
     });
   }
 
   create() {
-    this.scene.start("GameScene");
+    // Minimum 2 second display, then fade out the HTML overlay
+    const MIN_MS = 2000;
+    const startTime = performance.timing?.navigationStart || (Date.now() - 2000);
+    const elapsed = Date.now() - startTime;
+    const wait = Math.max(0, MIN_MS - elapsed);
+
+    this.time.delayedCall(wait, () => {
+      const overlay = document.getElementById("loading-screen");
+      if (overlay) {
+        overlay.classList.add("fade-out");
+        setTimeout(() => overlay.remove(), 600);
+      }
+      this.scene.start("GameScene");
+    });
   }
 }

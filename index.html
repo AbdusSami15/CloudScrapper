@@ -40,10 +40,82 @@
 
     canvas {
       display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    /* ── Loading Screen Overlay ──────────────────────────────── */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #0b1628 0%, #162d50 100%);
+      transition: opacity 0.5s ease;
+    }
+    #loading-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-screen .load-title {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: clamp(22px, 5vw, 48px);
+      color: #ffffff;
+      text-align: center;
+      margin-bottom: 6px;
+      text-shadow: 0 0 20px rgba(59,130,246,0.5);
+    }
+    #loading-screen .load-subtitle {
+      font-family: Arial, sans-serif;
+      font-size: clamp(12px, 2.2vw, 20px);
+      color: #94a3b8;
+      margin-bottom: 40px;
+    }
+    #loading-screen .load-status {
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: clamp(11px, 2vw, 18px);
+      color: #e2e8f0;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+    }
+    #loading-screen .bar-track {
+      width: min(55vw, 460px);
+      height: clamp(10px, 1.6vh, 18px);
+      background: #1e293b;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      overflow: hidden;
+    }
+    #loading-screen .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      border-radius: 999px;
+      transition: width 0.2s ease;
+    }
+    #loading-screen .load-dots {
+      margin-top: 18px;
+      font-size: clamp(10px, 1.4vw, 14px);
+      color: #475569;
+      animation: dotPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
     }
   </style>
 </head>
 <body>
+  <div id="loading-screen">
+    <div class="load-title">DOLWIN & BASH</div>
+    <div class="load-subtitle">Cloud Scrapper</div>
+    <div class="load-status" id="load-status">PREPARING GAME ASSETS (0%)</div>
+    <div class="bar-track"><div class="bar-fill" id="load-bar-fill"></div></div>
+    <div class="load-dots">● ● ●</div>
+  </div>
 
   <div id="game-root"></div>
   <div id="ui-root"></div>

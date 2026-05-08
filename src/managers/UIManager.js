@@ -330,8 +330,15 @@ export default class UIManager {
 
   _buildStatusText() {
     const { _hr: hr, _sw: sw, scene } = this;
+    const isPortrait = scene.scale.height >= scene.scale.width;
+
+    // Gameplay position (top of screen)
+    this._statusTopY = Math.round(78 * hr);
+    // Betting position (below center logo, portrait only)
+    this._statusBetY = isPortrait ? Math.round(680 * hr) : this._statusTopY;
+
     this.statusText = scene.add.text(
-      sw * 0.5, Math.round(78 * hr), "Place a bet and press PLAY",
+      sw * 0.5, this._statusBetY, "Place a bet and press PLAY",
       {
         fontFamily:      "Tilt Warp",
         fontSize:        `${Math.round(18 * hr)}px`,
@@ -342,8 +349,11 @@ export default class UIManager {
       }
     ).setOrigin(0.5).setDepth(101).setScrollFactor(0);
 
+    this._badgeTopY = Math.round(108 * hr);
+    this._badgeBetY = isPortrait ? Math.round(720 * hr) : this._badgeTopY;
+
     this.multiplierBadge = scene.add.text(
-      sw * 0.5, Math.round(108 * hr), "",
+      sw * 0.5, this._badgeBetY, "",
       {
         fontFamily:      "Tilt Warp",
         fontSize:        `${Math.round(28 * hr)}px`,
@@ -353,6 +363,66 @@ export default class UIManager {
         strokeThickness: Math.round(4 * hr)
       }
     ).setOrigin(0.5).setDepth(101).setVisible(false).setScrollFactor(0);
+  }
+
+  /** Animate status text below logo (betting screen) + pulse */
+  moveStatusToBetting() {
+    // Stop any existing pulse
+    if (this._statusPulse) { this._statusPulse.remove(); this._statusPulse = null; }
+
+    if (this.statusText) {
+      this.statusText.setScale(1);
+      this.scene.tweens.add({
+        targets: this.statusText,
+        y: this._statusBetY,
+        duration: 350,
+        ease: "Quad.easeOut",
+        onComplete: () => {
+          // Start scale pulse after arriving
+          this._statusPulse = this.scene.tweens.add({
+            targets: this.statusText,
+            scaleX: 1.08,
+            scaleY: 1.08,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut"
+          });
+        }
+      });
+    }
+    if (this.multiplierBadge) {
+      this.scene.tweens.add({
+        targets: this.multiplierBadge,
+        y: this._badgeBetY,
+        duration: 350,
+        ease: "Quad.easeOut"
+      });
+    }
+  }
+
+  /** Animate status text to top (gameplay) */
+  moveStatusToGameplay() {
+    // Stop pulse
+    if (this._statusPulse) { this._statusPulse.remove(); this._statusPulse = null; }
+    if (this.statusText) this.statusText.setScale(1);
+
+    if (this.statusText) {
+      this.scene.tweens.add({
+        targets: this.statusText,
+        y: this._statusTopY,
+        duration: 400,
+        ease: "Quad.easeOut"
+      });
+    }
+    if (this.multiplierBadge) {
+      this.scene.tweens.add({
+        targets: this.multiplierBadge,
+        y: this._badgeTopY,
+        duration: 400,
+        ease: "Quad.easeOut"
+      });
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════════
