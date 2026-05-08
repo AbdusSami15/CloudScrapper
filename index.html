@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>Cloud Scrapper</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./src/styles/ui.css">
+
+  <style>
+    @font-face {
+      font-family: 'Tilt Warp';
+      src: url('./assets/Tilt_Warp/TiltWarp-Regular-VariableFont_XROT,YROT.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100dvh;
+      overflow: hidden;
+      background: #0a1628;
+      font-family: Arial, sans-serif;
+      touch-action: none;
+    }
+
+    #game-root {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-root"></div>
+  <div id="ui-root"></div>
+
+  <!-- Portrait-only: shown via CSS media query when mobile/tablet goes landscape -->
+  <div id="orientation-lock" aria-hidden="true">
+    <div class="orientation-card">
+      <span class="orientation-icon">📱</span>
+      <div class="orientation-title">Rotate Your Device</div>
+      <div class="orientation-subtitle">Cloud Scrapper is portrait only.<br>Please rotate your phone upright.</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── Layer 3: Dynamic UI Scale ─────────────────────────────────────────
+       Sets --ui-scale CSS variable so any HTML UI elements (future overlays,
+       buttons) scale up gracefully on 4K/large monitors while staying at 1
+       on mobile.                                                             */
+    (function uiScaleBootstrap() {
+      const DESIGN_W = 1920;
+      const DESIGN_H = 1080;
+
+      function getViewport() {
+        const vv = window.visualViewport;
+        const vw = Math.max(1, Math.round(vv?.width  ?? window.innerWidth));
+        const vh = Math.max(1, Math.round(vv?.height ?? window.innerHeight));
+        return { vw, vh };
+      }
+
+      function updateUiScale() {
+        const { vw, vh } = getViewport();
+        const isPortrait    = vh >= vw;
+        const isSmallScreen = Math.min(vw, vh) <= 900;
+
+        // Mobile portrait → keep mobile-tuned CSS sizes unchanged (scale = 1).
+        // Desktop / large screens → upscale so UI is not tiny on 4K.
+        let scale = 1;
+        if (!isSmallScreen && !isPortrait) {
+          scale = Math.min(vw / DESIGN_W, vh / DESIGN_H);
+          scale = Math.max(1, Math.min(scale, 1.85));
+        }
+
+        document.documentElement.style.setProperty("--ui-scale", String(scale));
+      }
+
+      updateUiScale();
+      window.addEventListener("resize",             updateUiScale, { passive: true });
+      window.visualViewport?.addEventListener("resize", updateUiScale, { passive: true });
+    })();
+
+    /* ── Phaser loader with CDN fallback ───────────────────────────────── */
+    (function bootGame() {
+      const phaserSources = [
+        "https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js",
+        "https://unpkg.com/phaser@3.80.1/dist/phaser.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"
+      ];
+
+      function loadScript(src, type) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src   = src;
+          s.type  = type || "text/javascript";
+          s.onload  = resolve;
+          s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+
+      async function start() {
+        let loaded = false;
+        for (const src of phaserSources) {
+          try {
+            await loadScript(src);
+            loaded = true;
+            break;
+          } catch (e) {
+            console.warn("[CloudScrapper] Phaser CDN failed:", src);
+          }
+        }
+
+        if (!loaded || typeof window.Phaser === "undefined") {
+          console.error("[CloudScrapper] Could not load Phaser from any source.");
+          return;
+        }
+
+        await loadScript("./src/main.js", "module");
+      }
+
+      start();
+    })();
+  </script>
+
+</body>
+</html>
