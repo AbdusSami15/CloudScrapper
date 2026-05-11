@@ -24,8 +24,11 @@ export default class CloudManager {
   get startY() { return ry(this.scene, 540); }
 
   get groundY() {
-    const hr = Math.min(Math.min(this.scene.scale.width, this.scene.scale.height) / 540, 1.0);
-    return this.scene.scale.height - Math.round(92 * hr);
+    const sw  = this.scene.scale.width;
+    const sh  = this.scene.scale.height;
+    const dpr = Math.max(1, sw / window.innerWidth);
+    const hr  = Math.min(Math.min(sw, sh) / 540, dpr);
+    return sh - Math.round(92 * hr);
   }
 
   get groundPeakY() {

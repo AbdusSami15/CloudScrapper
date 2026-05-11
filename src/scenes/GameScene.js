@@ -66,10 +66,13 @@ export default class GameScene extends Phaser.Scene {
     const h = this.scale.height;
 
     const isLandscape = w > h;
-    const hr = Math.min(Math.min(w, h) / 540, 1.0);
+    // DPR-aware hr: capped at DPR so UI doesn't visually grow beyond
+    // reference size on wide PC monitors while still rendering at HD.
+    const dpr   = Math.max(1, w / window.innerWidth);
+    const hr    = Math.min(Math.min(w, h) / 540, dpr);
     const gameH = h - Math.round(92 * hr);
 
-    const groundH = Math.max(Math.round(gameH * 0.16), 80);
+    const groundH = Math.max(Math.round(gameH * 0.16), Math.round(80 * dpr));
 
     // PC (Landscape) needs taller and non-stretched buildings
     const cityH = isLandscape

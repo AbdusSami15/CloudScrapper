@@ -27,18 +27,21 @@ export default class UIManager {
 
     const sw = scene.scale.width;
     const sh = scene.scale.height;
-    const hr = Math.min(Math.min(sw, sh) / 540, 1.0);
-    this._hr = hr;
-    this._sw = sw;
-    this._sh = sh;
 
-    // Visible canvas height (RESIZE → visH == sh)
-    const vv     = window.visualViewport;
-    const rawVw  = Math.round(vv?.width  ?? window.innerWidth);
-    const rawVh  = Math.round(vv?.height ?? window.innerHeight);
-    const eScale = Math.max(rawVw / sw, rawVh / sh);
-    const visH   = Math.min(sh, rawVh / eScale);
-    this._visH   = visH;
+    // ── DPR-aware sizing ───────────────────────────────────────────────────
+    // Canvas now runs at viewport × DPR (see main.js).  The hr factor must
+    // be capped at DPR so UI elements don't visually grow beyond reference
+    // size on wide PC monitors but DO scale up for HD pixel density.
+    const dpr = Math.max(1, sw / window.innerWidth);
+    const hr  = Math.min(Math.min(sw, sh) / 540, dpr);
+    this._hr  = hr;
+    this._sw  = sw;
+    this._sh  = sh;
+    this._dpr = dpr;
+
+    // With manual HD sizing, the canvas always fills the viewport — visH
+    // equals canvas height (no overflow clipping to worry about).
+    this._visH = sh;
 
     this._buildBottomPanel();
     this._buildStatusText();
