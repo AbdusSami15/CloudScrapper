@@ -7,8 +7,11 @@ export default class PlayerController {
     this.isJumping = false;
     this.isDead    = false;
 
-    // Scale lion height to ~18% of canvas height (0.16 in 540×960 reference)
-    this._lionScale = rs(scene, 0.14);
+    // Scale lion height — slightly smaller on portrait so it doesn't crowd
+    // the limited horizontal space; landscape keeps the original size since
+    // the wide PC viewport has plenty of breathing room.
+    const isLandscape = scene.scale.width > scene.scale.height;
+    this._lionScale   = rs(scene, isLandscape ? 0.14 : 0.115);
 
     this.sprite = scene.add.image(x, y, AssetKeys.LION_IDLE);
     this.sprite.setOrigin(0.5, 1);
