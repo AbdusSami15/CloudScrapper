@@ -26,9 +26,14 @@ export default class GameScene extends Phaser.Scene {
     this.roundManager = new RoundManager(this);
     this.uiManager = new UIManager(this);
 
-    // Play background music (with safety check)
+    // Play background music (with safety check and looping)
     if (this.cache.audio.exists(AssetKeys.MUSIC_BG)) {
-      this.sound.play(AssetKeys.MUSIC_BG, { loop: true, volume: 0.4 });
+      if (!this.bgm) {
+        this.bgm = this.sound.add(AssetKeys.MUSIC_BG, { loop: true, volume: 0.4 });
+      }
+      if (!this.bgm.isPlaying) {
+        this.bgm.play();
+      }
     } else {
       console.warn("Background music not found in cache, skipping playback.");
     }

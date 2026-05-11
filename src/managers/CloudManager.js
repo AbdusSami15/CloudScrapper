@@ -40,7 +40,22 @@ export default class CloudManager {
   }
 
   cloudX(stepIndex) {
-    return rx(this.scene, PATTERN_X[stepIndex % PATTERN_X.length]);
+    const isLandscape = this.scene.scale.width > this.scene.scale.height;
+    let x = PATTERN_X[stepIndex % PATTERN_X.length];
+    
+    if (!isLandscape) {
+      // In portrait, spread them further from the center (270)
+      const center = 270;
+      const offset = x - center;
+      // Use 1.4x spread instead of 1.6x for safety
+      x = center + (offset * 1.4);
+      
+      // Strict clamp to ensure they stay within screen bounds (assuming ~170px cloud width)
+      // 90 to 450 is a very safe range for the center point in 540-wide space
+      x = Phaser.Math.Clamp(x, 90, 450);
+    }
+    
+    return rx(this.scene, x);
   }
 
   reset() {

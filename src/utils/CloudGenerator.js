@@ -1,10 +1,13 @@
 import DifficultyConfig from "../config/DifficultyConfig.js";
 import { getMultiplier } from "./Multiplier.js";
 
-const FAIL_TYPES = ["thunder", "burst"];
+const FAIL_TYPES = ["thunder", "burst", "lightning"];
 
 function getRandomFailType() {
-  return FAIL_TYPES[Phaser.Math.Between(0, FAIL_TYPES.length - 1)];
+  const r = Math.random();
+  if (r < 0.33) return FAIL_TYPES[0]; // thunder
+  if (r < 0.66) return FAIL_TYPES[1]; // burst
+  return FAIL_TYPES[2];               // lightning
 }
 
 export function createCloudData(stepIndex, difficultyKey, forceType = null) {

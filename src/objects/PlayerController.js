@@ -8,7 +8,7 @@ export default class PlayerController {
     this.isDead    = false;
 
     // Scale lion height to ~18% of canvas height (0.16 in 540×960 reference)
-    this._lionScale = rs(scene, 0.16);
+    this._lionScale = rs(scene, 0.14);
 
     this.sprite = scene.add.image(x, y, AssetKeys.LION_IDLE);
     this.sprite.setOrigin(0.5, 1);

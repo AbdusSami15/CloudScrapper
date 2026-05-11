@@ -22,7 +22,7 @@ export default class CloudView extends Phaser.GameObjects.Container {
     this.cloudSprite.setOrigin(0.5);
 
     const isLandscape = scene.scale.width > scene.scale.height;
-    const sizeFactor = isLandscape ? 0.30 : 0.135;
+    const sizeFactor = isLandscape ? 0.30 : 0.175;
     const targetCloudW = scene.scale.height * sizeFactor;
 
     this._cloudScale = targetCloudW / this.cloudSprite.width;

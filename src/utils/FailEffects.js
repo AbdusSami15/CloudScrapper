@@ -30,9 +30,24 @@ export function playFailEffect(scene, failType, cloudView, playerSprite) {
     return this;
   };
 
-  const cleanup = (failType === "burst")
-    ? playBurst(scene, cloudView, playerSprite)
-    : playThunder(scene, cloudView, playerSprite);
+  const type = (failType || "").toLowerCase();
+  let cleanup;
+
+  switch (type) {
+    case "thunder":
+      cleanup = playThunder(scene, cloudView, playerSprite);
+      break;
+    case "burst":
+      cleanup = playBurst(scene, cloudView, playerSprite);
+      break;
+    case "lightning":
+      cleanup = playLightning(scene, cloudView, playerSprite);
+      break;
+    default:
+      // Fallback to thunder for safety
+      cleanup = playThunder(scene, cloudView, playerSprite);
+      break;
+  }
 
   return () => {
     if (cleanup) cleanup();
@@ -72,19 +87,19 @@ function playThunder(scene, cloudView, playerSprite) {
     scene.tweens.add({ targets: cloudImg, alpha: 1, duration: 80 });
 
     THUNDER_FRAMES.forEach((key, i) => {
-      timers.push(scene.time.delayedCall(i * 100, () => {
+      timers.push(scene.time.delayedCall(i * 150, () => {
         if (cloudImg.active) cloudImg.setTexture(key);
       }));
     });
   }
 
   // Camera shake on strike frame
-  timers.push(scene.time.delayedCall(300, () => {
-    scene.cameras.main.shake(320, 0.014);
+  timers.push(scene.time.delayedCall(450, () => {
+    scene.cameras.main.shake(400, 0.016);
   }));
 
   // Final fall plummet + Camera follow
-  timers.push(scene.time.delayedCall(600, () => {
+  timers.push(scene.time.delayedCall(1100, () => {
     if (!playerSprite.active) return;
     
     // Switch cloud back to basic thunder cloud (no character)
@@ -149,14 +164,14 @@ function playBurst(scene, cloudView, playerSprite) {
       ease:     "Bounce.easeOut"
     });
 
-    // Scatter cloud fragments
-    const radius   = Math.round(8  * hr);
-    const spreadX  = Math.round(75 * wr);
-    const spreadY  = Math.round(45 * hr);
+    // Scatter cloud fragments (using white for better visibility)
+    const radius   = Math.round(10 * hr);
+    const spreadX  = Math.round(85 * wr);
+    const spreadY  = Math.round(55 * hr);
 
-    for (let i = 0; i < 8; i++) {
-      const angle    = (Math.PI * 2 * i) / 8;
-      const fragment = scene.add.circle(cloudView.x, cloudView.y, radius, 0xbdd8f5, 0.95);
+    for (let i = 0; i < 10; i++) {
+      const angle    = (Math.PI * 2 * i) / 10;
+      const fragment = scene.add.circle(cloudView.x, cloudView.y, radius, 0xffffff, 0.95);
       fragment.setDepth(39);
       fragments.push(fragment);
 
@@ -165,15 +180,18 @@ function playBurst(scene, cloudView, playerSprite) {
         x:        cloudView.x + Math.cos(angle) * spreadX,
         y:        cloudView.y + Math.sin(angle) * spreadY,
         alpha:    0,
-        scale:    0.2,
-        duration: 380,
+        scale:    0.1,
+        delay:    50, // Slight delay to see the initial burst
+        duration: 450,
         ease:     "Quad.easeOut",
         onComplete: () => fragment.destroy()
       });
     }
   }
 
-  scene.cameras.main.shake(200, 0.009);
+  playerSprite.setVisible(true);
+  playerSprite.setAlpha(1);
+  scene.cameras.main.shake(250, 0.012);
 
   // Switch to fall sprite and plummet
   timers.push(scene.time.delayedCall(350, () => {
@@ -212,5 +230,62 @@ function playBurst(scene, cloudView, playerSprite) {
       scene.tweens.killTweensOf(f);
       if (f.active) f.destroy();
     }
+  };
+}
+function playLightning(scene, cloudView, playerSprite) {
+  const timers = [];
+
+  if (cloudView) {
+    cloudView.revealBadCloud();
+    scene.tweens.add({
+      targets:  cloudView,
+      scaleX:   1.08,
+      scaleY:   1.08,
+      duration: 100,
+      yoyo:     true,
+      repeat:   1,
+      ease:     "Sine.easeInOut"
+    });
+  }
+
+  scene.cameras.main.shake(300, 0.01);
+
+  // Play the shock sequence (skeleton frames)
+  SHOCK_FRAMES.forEach((key, i) => {
+    timers.push(scene.time.delayedCall(i * 120, () => {
+      if (playerSprite.active) playerSprite.setTexture(key);
+    }));
+  });
+
+  // Start the fall after the shock sequence
+  timers.push(scene.time.delayedCall(800, () => {
+    if (!playerSprite.active) return;
+
+    playerSprite.setTexture(AssetKeys.LION_SHOCK_4);
+
+    const groundY = scene.cloudManager.groundPeakY;
+    const fallDist = groundY - playerSprite.y;
+    const duration = Math.max(800, Math.min(1500, fallDist * 1.5));
+
+    scene.tweens.add({
+      targets:  playerSprite,
+      alpha:    0.85,
+      y:        groundY,
+      angle:    180,
+      duration: duration,
+      ease:     "Quad.easeIn"
+    });
+
+    scene.tweens.add({
+      targets: scene.cameras.main,
+      scrollY: 0,
+      duration: duration,
+      ease: "Quad.easeIn"
+    });
+  }));
+
+  return () => {
+    timers.forEach(t => t.remove(false));
+    scene.tweens.killTweensOf(playerSprite);
   };
 }

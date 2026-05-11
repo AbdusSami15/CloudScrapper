@@ -38,10 +38,19 @@
       overflow: hidden;
     }
 
+    /* HD canvas rendering hints
+       NOTE: avoid `crisp-edges` / `pixelated` here — those force NEAREST
+       filtering at the CSS level and *blur/aliases* photo-style assets
+       (clouds, lion, logo).  `auto` lets the browser pick bilinear/bicubic
+       smoothing, which combined with Phaser's super-sampled internal buffer
+       gives a crisp HD result on every device. */
     canvas {
       display: block;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
+      image-rendering: auto;
+      image-rendering: high-quality;
+      transform: translateZ(0);          /* force GPU compositing */
+      backface-visibility: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── Loading Screen Overlay ──────────────────────────────── */

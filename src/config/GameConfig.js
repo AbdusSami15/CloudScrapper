@@ -13,5 +13,5 @@ export const GAME_CONFIG = Object.freeze({
 
   // UI / animation
   balanceTweenMs:  450,
-  resultDelayMs:   2500
+  resultDelayMs:   2800
 });

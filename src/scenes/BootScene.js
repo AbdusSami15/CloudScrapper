@@ -70,6 +70,16 @@ export default class BootScene extends Phaser.Scene {
     this.load.on("loaderror", (file) => {
       console.error("Phaser Load Error:", file.src, file.key);
     });
+
+    // ── Force LINEAR filter on every image texture once loaded ─────────
+    // Default is LINEAR but some mobile WebGL contexts revert to NEAREST,
+    // producing pixelated edges on smooth assets (lion, clouds, logo).
+    this.load.on("filecomplete-image", (key) => {
+      const tex = this.textures.get(key);
+      if (tex && tex.setFilter) {
+        tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+    });
   }
 
   create() {
