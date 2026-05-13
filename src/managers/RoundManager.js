@@ -75,7 +75,7 @@ export default class RoundManager {
     gm.setState(GAME_STATES.JUMPING, "jump_started");
     this.scene.uiManager.setStatus("Jumping...");
     playJumpJuice(this.scene, this.scene.player.x, this.scene.player.y);
-    this.scene.sound.play(AssetKeys.SFX_JUMP, { volume: 1.0 });
+    this.scene.sound.play(AssetKeys.SFX_JUMP, { volume: 1.2 });
 
     this.scene.player.jumpTo(targetCloud.x, targetCloud.y + 2, 500, () => {
       this._resolveLanding(targetCloud);
@@ -202,7 +202,6 @@ export default class RoundManager {
     if (prevCloud) prevCloud.setHighlighted(false);
 
     this.scene.player.showHappy();
-    this.scene.player.showMultiplierBadge(this.currentMultiplier);
     this.scene.uiManager.setCurrentMultiplier(this.currentMultiplier);
     this.scene.uiManager.refreshCashoutButton();
     this.scene.uiManager.setStatus(`Safe! ${this.currentMultiplier.toFixed(2)}x locked`);

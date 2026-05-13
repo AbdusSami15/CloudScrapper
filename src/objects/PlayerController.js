@@ -1,22 +1,45 @@
 import AssetKeys from "../managers/AssetKeys.js";
 import { rs } from "../utils/ScreenUtil.js";
 
+function lionNaturalHeight(scene, key) {
+  if (!scene.textures.exists(key)) return 1;
+  return scene.textures.get(key).getSourceImage().height || 1;
+}
+
 export default class PlayerController {
   constructor(scene, x, y) {
     this.scene     = scene;
     this.isJumping = false;
     this.isDead    = false;
 
-    // Scale lion height — slightly smaller on portrait so it doesn't crowd
-    // the limited horizontal space; landscape keeps the original size since
-    // the wide PC viewport has plenty of breathing room.
     const isLandscape = scene.scale.width > scene.scale.height;
-    this._lionScale   = rs(scene, isLandscape ? 0.14 : 0.115);
+    this._lionScale          = rs(scene, isLandscape ? 0.188 : 0.128);
+    const nhIdle             = lionNaturalHeight(scene, AssetKeys.LION_IDLE);
+    this._lionTargetDisplayH = nhIdle * this._lionScale;
 
     this.sprite = scene.add.image(x, y, AssetKeys.LION_IDLE);
     this.sprite.setOrigin(0.5, 1);
     this.sprite.setDepth(20);
-    this.sprite.setScale(this._lionScale);
+    this._applyUniformForKey(AssetKeys.LION_IDLE);
+    this._jumpPhaseKey = null;
+  }
+
+  /** Fail FX + UI: fixed on-screen lion height (px) for every frame */
+  getLionUniformHeight() {
+    return this._lionTargetDisplayH;
+  }
+
+  _lionBaseScale() {
+    const nh = lionNaturalHeight(this.scene, this.sprite.texture.key);
+    return this._lionTargetDisplayH / nh;
+  }
+
+  _applyUniformForKey(key) {
+    const k = this._jpTex(key, AssetKeys.LION_IDLE);
+    if (!this.scene.textures.exists(k)) return;
+    this.sprite.setTexture(k);
+    const nh = lionNaturalHeight(this.scene, k);
+    this.sprite.setScale(this._lionTargetDisplayH / nh);
   }
 
   get x() { return this.sprite.x; }
@@ -27,24 +50,27 @@ export default class PlayerController {
   }
 
   setTexture(key) {
-    this.sprite.setTexture(key);
+    this._applyUniformForKey(key);
+  }
+
+  normalizeLionAfterFail() {
+    this._applyUniformForKey(AssetKeys.LION_IDLE);
   }
 
   resetVisual() {
-    // Kill any ongoing tweens on the sprite first
     this.scene.tweens.killTweensOf(this.sprite);
     if (this._bobTween) {
       this._bobTween.stop();
       this._bobTween = null;
     }
 
-    this.sprite.setTexture(AssetKeys.LION_IDLE);
-    this.sprite.setScale(this._lionScale);
+    this._applyUniformForKey(AssetKeys.LION_IDLE);
     this.sprite.setAlpha(1);
     this.sprite.setAngle(0);
     this.sprite.setVisible(true);
     this.isJumping = false;
     this.isDead = false;
+    this._jumpPhaseKey = null;
 
     this._startIdleBobbing();
   }
@@ -52,7 +78,7 @@ export default class PlayerController {
   _startIdleBobbing() {
     if (this.isDead) return;
     if (this._bobTween) this._bobTween.stop();
-    this.sprite.setY(this.sprite.y); // Reset to base Y
+    this.sprite.setY(this.sprite.y);
     this._bobTween = this.scene.tweens.add({
       targets: this.sprite,
       y: this.sprite.y - rs(this.scene, 6),
@@ -70,10 +96,26 @@ export default class PlayerController {
     }
   }
 
-  showIdle()  { this.setTexture(AssetKeys.LION_IDLE);  }
-  showJump()  { this.setTexture(AssetKeys.LION_JUMP);  }
-  showHappy() { this.setTexture(AssetKeys.LION_HAPPY); }
-  showFall()  { this.setTexture(AssetKeys.LION_FALL);  }
+  showIdle() {
+    this._applyUniformForKey(AssetKeys.LION_IDLE);
+  }
+
+  showJump() {
+    const k = this._jpTex(AssetKeys.LION_JP_PREPARE, AssetKeys.LION_IDLE);
+    this._applyUniformForKey(k);
+  }
+
+  showHappy() {
+    this._applyUniformForKey(AssetKeys.LION_HAPPY);
+  }
+
+  showFall() {
+    this._applyUniformForKey(AssetKeys.LION_FALL);
+  }
+
+  _jpTex(primary, fallback) {
+    return this.scene.textures.exists(primary) ? primary : fallback;
+  }
 
   setFacing(targetX) {
     const startX = this.sprite.x;
@@ -85,22 +127,32 @@ export default class PlayerController {
     if (this.isJumping) return;
 
     this.isJumping = true;
-    this.showJump();
+
+    const seq = [
+      [0.00, AssetKeys.LION_JP_PREPARE],
+      [0.11, AssetKeys.LION_JP_JUMP],
+      [0.34, AssetKeys.LION_JP_MIDAIR],
+      [0.62, AssetKeys.LION_JP_READYLAND],
+      [0.84, AssetKeys.LION_JP_LAND]
+    ];
+
+    const first = this._jpTex(AssetKeys.LION_JP_PREPARE, AssetKeys.LION_IDLE);
+    this._applyUniformForKey(first);
+    this._jumpPhaseKey = first;
 
     const startX    = this.sprite.x;
     const startY    = this.sprite.y;
     const arcHeight = rs(this.scene, 85);
     const tweenProxy = { t: 0 };
 
-    // Face the target cloud
     this.setFacing(targetX);
     this.stopIdleBobbing();
 
-    // Initial squash when starting the jump
+    const b0 = this._lionBaseScale();
     this.scene.tweens.add({
       targets:  this.sprite,
-      scaleX:   this._lionScale * 1.15,
-      scaleY:   this._lionScale * 0.85,
+      scaleX:   b0 * 1.15,
+      scaleY:   b0 * 0.85,
       duration: 100,
       yoyo:     true,
       ease:     "Quad.easeOut"
@@ -117,88 +169,45 @@ export default class PlayerController {
         const y = Phaser.Math.Linear(startY, targetY, t) - Math.sin(Math.PI * t) * arcHeight;
         this.sprite.setPosition(x, y);
 
-        // Stretch during the middle of the jump
+        let picked = seq[0][1];
+        for (const [th, key] of seq) {
+          if (t >= th) picked = key;
+        }
+        const fallback = picked === AssetKeys.LION_JP_PREPARE ? AssetKeys.LION_IDLE : AssetKeys.LION_JUMP;
+        const tex = this._jpTex(picked, fallback);
+        if (tex !== this._jumpPhaseKey) {
+          this._applyUniformForKey(tex);
+          this._jumpPhaseKey = tex;
+        }
+
+        const b = this._lionBaseScale();
         const stretchFactor = Math.sin(Math.PI * t) * 0.15;
-        this.sprite.scaleX = this._lionScale * (1 - stretchFactor);
-        this.sprite.scaleY = this._lionScale * (1 + stretchFactor);
+        this.sprite.scaleX = b * (1 - stretchFactor);
+        this.sprite.scaleY = b * (1 + stretchFactor);
       },
       onComplete: () => {
         this.isJumping = false;
+        this._jumpPhaseKey = null;
         this.sprite.setPosition(targetX, targetY);
-        
+
         if (this.isDead) return;
 
-        // Impact squash on landing
+        const b1 = this._lionBaseScale();
         this.scene.tweens.add({
           targets:  this.sprite,
-          scaleX:   this._lionScale * 1.2,
-          scaleY:   this._lionScale * 0.8,
+          scaleX:   b1 * 1.2,
+          scaleY:   b1 * 0.8,
           duration: 120,
           yoyo:     true,
           ease:     "Back.easeOut",
           onComplete: () => {
-            this.sprite.setScale(this._lionScale);
+            this._applyUniformForKey(AssetKeys.LION_IDLE);
             this._startIdleBobbing();
           }
         });
 
         if (onComplete) onComplete();
       }
-    });
-  }
-  showMultiplierBadge(multiplier) {
-    const { scene } = this;
-    const hr = scene.scale.height / 960;
-    
-    // Position above the head (lion's origin is at the feet/bottom)
-    const bx = this.sprite.x;
-    const by = this.sprite.y - this.sprite.displayHeight - rs(scene, 15);
-    
-    const badgeW = rs(scene, 85);
-    const badgeH = rs(scene, 36);
-    const radius = rs(scene, 10);
-    
-    const container = scene.add.container(bx, by).setDepth(30);
-    
-    // Yellow rounded rectangle background
-    const bg = scene.add.graphics();
-    bg.fillStyle(0xfacc15, 1); // Yellow
-    bg.fillRoundedRect(-badgeW/2, -badgeH/2, badgeW, badgeH, radius);
-    bg.lineStyle(rs(scene, 2), 0xca8a04, 1); // Slightly darker border
-    bg.strokeRoundedRect(-badgeW/2, -badgeH/2, badgeW, badgeH, radius);
-    
-    // Multiplier text
-    const txt = scene.add.text(0, 0, `${multiplier.toFixed(2)}x`, {
-      fontFamily: "Tilt Warp",
-      fontSize: `${Math.round(20 * hr)}px`,
-      color: "#1d4ed8", // Deep Blue
-      fontStyle: "bold",
-      stroke: "#ffffff",
-      strokeThickness: Math.round(1 * hr)
-    }).setOrigin(0.5);
-    
-    container.add([bg, txt]);
-    
-    // Animation: Pop up, float, and fade out
-    container.setScale(0.5);
-    container.setAlpha(0);
-
-    scene.tweens.add({
-      targets: container,
-      scale: 1,
-      alpha: 1,
-      y: by - rs(scene, 25),
-      duration: 350,
-      ease: "Back.easeOut"
-    });
-    
-    scene.tweens.add({
-      targets: container,
-      alpha: 0,
-      y: by - rs(scene, 60),
-      delay: 1100,
-      duration: 450,
-      onComplete: () => container.destroy()
     });
   }
 }

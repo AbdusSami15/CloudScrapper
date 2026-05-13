@@ -1,4 +1,9 @@
 import AssetKeys from "../managers/AssetKeys.js";
+import { UI_FONT_FAMILY } from "../config/UiFont.js";
+
+/** Multiplier colours — client PDF #15 */
+export const MULT_UNREACHED_ORANGE = "#FF8F14";
+export const MULT_REACHED_GOLD = "#FACC14";
 
 const CLOUD_FRAMES = [
   AssetKeys.CLOUD_V2_1,
@@ -29,15 +34,15 @@ export default class CloudView extends Phaser.GameObjects.Container {
     this.cloudSprite.setScale(this._cloudScale);
 
     const hr = scene.scale.height / 960;
-    const fontSize = `${Math.round((isLandscape ? 28 : 20) * hr)}px`;
+    const fontSize = `${Math.round((isLandscape ? 34 : 26) * hr)}px`;
 
     this.multiplierText = scene.add.text(0, 0, "", {
-      fontFamily: "Tilt Warp",
+      fontFamily: UI_FONT_FAMILY,
       fontSize,
-      color: "#1850d8",
+      color: MULT_UNREACHED_ORANGE,
       fontStyle: "bold",
-      stroke: "#ffffff",
-      strokeThickness: Math.round(4 * hr)
+      stroke: "#000000",
+      strokeThickness: Math.round(5 * hr)
     }).setOrigin(0.5);
 
     this.add([this.cloudSprite, this.multiplierText]);
@@ -60,20 +65,29 @@ export default class CloudView extends Phaser.GameObjects.Container {
     this.cloudData = cloudData;
     this.resetVisual();
     this.multiplierText.setText(`${cloudData.multiplier.toFixed(2)}x`);
+    this.setMultiplierReached(false);
 
     // Start a subtle bobbing idle animation
-    if (this._idleTween) this._idleTween.remove();
+    this._startIdleBobbing();
+
+    // Start frame animation (each cloud has a random offset so they don't all sync)
+    this._startFrameAnimation();
+  }
+
+  _startIdleBobbing() {
+    if (this._idleTween) {
+      this._idleTween.remove();
+      this._idleTween = null;
+    }
+
     this._idleTween = this.scene.tweens.add({
       targets: this.cloudSprite,
-      y: `+=${this.scene.scale.height * 0.008}`,
+      y: `+=${this.scene.scale.height * 0.011}`,
       duration: 1500 + Math.random() * 1000,
       yoyo: true,
       repeat: -1,
       ease: "Sine.easeInOut"
     });
-
-    // Start frame animation (each cloud has a random offset so they don't all sync)
-    this._startFrameAnimation();
   }
 
   _startFrameAnimation() {
@@ -137,7 +151,10 @@ export default class CloudView extends Phaser.GameObjects.Container {
   }
 
   revealBadCloud() {
-    if (this._idleTween) this._idleTween.pause();
+    if (this._idleTween) {
+      this._idleTween.remove();
+      this._idleTween = null;
+    }
     this._stopFrameAnimation();
     // Swap to dark Thor cloud when the player lands on a bad one
     const goodDisplayW = this.cloudSprite.width * this._cloudScale;
@@ -149,7 +166,10 @@ export default class CloudView extends Phaser.GameObjects.Container {
   }
 
   revealBrokenCloud() {
-    if (this._idleTween) this._idleTween.pause();
+    if (this._idleTween) {
+      this._idleTween.remove();
+      this._idleTween = null;
+    }
     this._stopFrameAnimation();
     // Swap to broken cloud image
     const goodDisplayW = this.cloudSprite.width * this._cloudScale;
@@ -184,13 +204,53 @@ export default class CloudView extends Phaser.GameObjects.Container {
   }
 
   playGoodFeedback() {
+    // 1. Properly stop and null the idle tween before killing other tweens
+    if (this._idleTween) {
+      this._idleTween.remove();
+      this._idleTween = null;
+    }
+
+    // 2. Kill any existing bounce tweens to prevent overlap
+    this.scene.tweens.killTweensOf([this.cloudSprite, this.multiplierText]);
+
+    const isLandscape = this.scene.scale.width > this.scene.scale.height;
+    const dipY = isLandscape ? 18 : 12;
+
+    // 3. Squash & Stretch + Downward dip
     this.scene.tweens.add({
-      targets: this,
-      scaleX: 1.12,
-      scaleY: 1.12,
-      duration: 120,
+      targets: this.cloudSprite,
+      y: dipY,
+      scaleX: this._cloudScale * 1.25,
+      scaleY: this._cloudScale * 0.75,
+      duration: 100,
       yoyo: true,
-      ease: "Back.easeOut"
+      ease: "Quad.easeOut",
+      onComplete: () => {
+        this.cloudSprite.y = 0;
+        this.cloudSprite.setScale(this._cloudScale);
+        // 5. Restart idle bobbing
+        this._startIdleBobbing();
+      }
     });
+
+    // 4. Multiplier text bounce
+    this.scene.tweens.add({
+      targets: this.multiplierText,
+      y: dipY * 0.8,
+      scale: 1.15,
+      duration: 100,
+      yoyo: true,
+      ease: "Quad.easeOut",
+      onComplete: () => {
+        this.multiplierText.y = 0;
+        this.multiplierText.setScale(1);
+      }
+    });
+  }
+
+  setMultiplierReached(reached) {
+    if (!this.multiplierText || !this.multiplierText.active) return;
+    if (!this.multiplierText.visible) return;
+    this.multiplierText.setColor(reached ? MULT_REACHED_GOLD : MULT_UNREACHED_ORANGE);
   }
 }

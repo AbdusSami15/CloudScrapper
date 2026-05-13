@@ -1,4 +1,5 @@
 import AssetKeys from "../managers/AssetKeys.js";
+import ParallaxBackground from "../managers/ParallaxBackground.js";
 import { GAME_CONFIG } from "../config/GameConfig.js";
 import GameManager from "../managers/GameManager.js";
 import RoundManager from "../managers/RoundManager.js";
@@ -69,77 +70,8 @@ export default class GameScene extends Phaser.Scene {
   //  Visuals
   // ════════════════════════════════════════════════════════════════════════
   createBackground() {
-    const w = this.scale.width;
-    const h = this.scale.height;
-
-    const isLandscape = w > h;
-    // DPR-aware hr: capped at DPR so UI doesn't visually grow beyond
-    // reference size on wide PC monitors while still rendering at HD.
-    const dpr   = Math.max(1, w / window.innerWidth);
-    const hr    = Math.min(Math.min(w, h) / 540, dpr);
-    const gameH = h - Math.round(92 * hr);
-
-    const groundH = Math.max(Math.round(gameH * 0.16), Math.round(80 * dpr));
-
-    // PC (Landscape) needs taller and non-stretched buildings
-    const cityH = isLandscape
-      ? Math.round(gameH * 0.08) // Even smaller silhouette
-      : Math.round(gameH * 0.42);
-
-    this.add.image(w * 0.5, h * 0.5, AssetKeys.BG_SKY)
-      .setDisplaySize(w, h)
-      .setDepth(0)
-      .setScrollFactor(0);
-
-
-
-
-
-    if (isLandscape) {
-      // Use TileSprite on PC but scale it to fill the width (so it doesn't repeat multiple times on 1 screen)
-      const tex = this.textures.get(AssetKeys.BG_CITY).getSourceImage();
-
-      // Calculate scale to fill the width (with a small buffer)
-      const targetW = w * 1.02;
-      const tileScale = targetW / tex.width;
-      const displayH = tex.height * tileScale;
-
-      this.add.tileSprite(w * 0.5, gameH * 1.45, w, displayH, AssetKeys.BG_CITY)
-        .setOrigin(0.5, 1)
-        .setTileScale(tileScale, tileScale)
-        .setAlpha(0.95)
-        .setDepth(1);
-    } else {
-      // Lowered city further (gameH * 1.05)
-      this.add.image(w * 0.5, gameH * 1.07, AssetKeys.BG_CITY)
-        .setOrigin(0.5, 1)
-        .setDisplaySize(w * 1.05, cityH)
-        .setAlpha(0.95)
-        .setDepth(1);
-    }
-
-    if (isLandscape) {
-      // Scale ground proportionally to maintain the "slope" look, 
-      // but move it down so it doesn't take up too much vertical space.
-      const gTex = this.textures.get(AssetKeys.BG_GROUND).getSourceImage();
-      const gScale = (w * 1) / gTex.width;
-      const ground = this.add.image(w * 0.5, gameH, AssetKeys.BG_GROUND)
-        .setOrigin(0.5, 1)
-        .setScale(gScale)
-        .setDepth(2);
-
-      // Extreme minimal ground visibility (4%)
-      const maxVisibleH = gameH * 0.04;
-      if (ground.displayHeight > maxVisibleH) {
-        ground.y += (ground.displayHeight - maxVisibleH);
-      }
-    } else {
-      // Lowered ground slightly (gameH * 1.02)
-      this.add.image(w * 0.5, gameH * 1.1, AssetKeys.BG_GROUND)
-        .setOrigin(0.5, 1)
-        .setDisplaySize(w, groundH)
-        .setDepth(2);
-    }
+    this.parallaxBg?.destroy?.();
+    this.parallaxBg = new ParallaxBackground(this);
   }
 
   createLogo() {
@@ -150,7 +82,7 @@ export default class GameScene extends Phaser.Scene {
     // Main branding logo in the center sky
     this.logoImage = this.add.image(w * 0.5, ry(this, 350), AssetKeys.LOGO)
       .setOrigin(0.5)
-      .setDepth(3);
+      .setDepth(15);
 
     const baseScale = isLandscape ? 0.25 : 0.18;
     this.logoImage.setScale(baseScale * hr);
@@ -159,12 +91,12 @@ export default class GameScene extends Phaser.Scene {
     const padding = ry(this, 20);
     this.upperLogo = this.add.image(w - padding, padding, AssetKeys.UPPER_LOGO)
       .setOrigin(1, 0)
-      .setDepth(3)
+      .setDepth(15)
       .setScrollFactor(0);
 
-    // Match the exact same scaling logic as the main logo to ensure quality
-    const logoScale = isLandscape ? 0.25 : 0.18;
-    this.upperLogo.setScale(logoScale * hr);
+    // Use a smaller scale for the upper logo compared to the main logo
+    const upperLogoScale = isLandscape ? 0.14 : 0.11;
+    this.upperLogo.setScale(upperLogoScale * hr);
   }
 
   // ════════════════════════════════════════════════════════════════════════

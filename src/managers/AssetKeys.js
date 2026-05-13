@@ -1,7 +1,18 @@
 const AssetKeys = {
+  /** Legacy fallback tiles if parallax PNGs fail to load */
   BG_SKY: "bg_sky",
   BG_CITY: "bg_city",
   BG_GROUND: "bg_ground",
+
+  BG_PARALLAX_SKY_FAR: "bg_parallax_sky_far",
+  BG_PARALLAX_SKY_NEAR: "bg_parallax_sky_near",
+  BG_PARALLAX_BASE: "bg_parallax_base",
+
+  BG_PLANE_1: "bg_plane_1",
+  BG_PLANE_2: "bg_plane_2",
+  BG_PLANE_3: "bg_plane_3",
+  BG_PLANE_5: "bg_plane_5",
+  BG_PLANE_7: "bg_plane_7",
 
   CLOUD: "cloud",
   CLOUD_BAD: "cloud_bad",
@@ -26,6 +37,13 @@ const AssetKeys = {
   LION_FALL: "lion_fall",
   LION_FALL_BROKEN: "lion_fall_broken",
 
+  /** Jump-cycle frames (`lion-jump-png`) */
+  LION_JP_PREPARE: "lion_jp_prepare",
+  LION_JP_JUMP: "lion_jp_jump",
+  LION_JP_MIDAIR: "lion_jp_midair",
+  LION_JP_READYLAND: "lion_jp_readyland",
+  LION_JP_LAND: "lion_jp_land",
+
   LION_SHOCK_1: "lion_shock_1",
   LION_SHOCK_2: "lion_shock_2",
   LION_SHOCK_3: "lion_shock_3",
@@ -37,7 +55,14 @@ const AssetKeys = {
   THUNDER_4: "thunder_4",
   THUNDER_5: "thunder_5",
   THUNDER_6: "thunder_6",
-  
+
+  /** Stylised bolts (`assets/lightning/`) — lightning fail FX */
+  LIGHTNING_BOLT_1: "lightning_bolt_1",
+  LIGHTNING_BOLT_2: "lightning_bolt_2",
+  LIGHTNING_BOLT_3: "lightning_bolt_3",
+  LIGHTNING_BOLT_4: "lightning_bolt_4",
+  LIGHTNING_BOLT_5: "lightning_bolt_5",
+
   SFX_CLICK: "sfx_click",
   SFX_START: "sfx_start",
   SFX_HIT:   "sfx_hit",

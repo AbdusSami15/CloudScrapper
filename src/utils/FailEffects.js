@@ -15,6 +15,14 @@ const THUNDER_FRAMES = [
   AssetKeys.THUNDER_6
 ];
 
+const BOLT_KEYS = [
+  AssetKeys.LIGHTNING_BOLT_1,
+  AssetKeys.LIGHTNING_BOLT_2,
+  AssetKeys.LIGHTNING_BOLT_3,
+  AssetKeys.LIGHTNING_BOLT_4,
+  AssetKeys.LIGHTNING_BOLT_5
+];
+
 const SHOCK_FRAMES = [
   AssetKeys.LION_SHOCK_1,
   AssetKeys.LION_SHOCK_2,
@@ -23,16 +31,15 @@ const SHOCK_FRAMES = [
 ];
 
 export function playFailEffect(scene, failType, cloudView, playerSprite) {
-  // Store the original display size to ensure fail textures match the actual doll size
-  const targetH = playerSprite.displayHeight;
-  const originalScale = playerSprite.scale;
+  const targetH =
+    scene.player?.getLionUniformHeight?.() ?? playerSprite.displayHeight;
 
-  // We'll wrap setTexture to keep the height consistent
   const originalSetTexture = playerSprite.setTexture;
   playerSprite.setTexture = function(key) {
     originalSetTexture.call(this, key);
-    // Keep the height identical to the idle doll, maintaining aspect ratio
-    this.setDisplaySize(targetH * (this.width / this.height), targetH);
+    if (!scene.textures.exists(key)) return this;
+    const nh = scene.textures.get(key).getSourceImage().height || 1;
+    this.setScale(targetH / nh);
     return this;
   };
 
@@ -59,8 +66,7 @@ export function playFailEffect(scene, failType, cloudView, playerSprite) {
     if (cleanup) cleanup();
     if (playerSprite.active) {
       playerSprite.setTexture = originalSetTexture;
-      playerSprite.setScale(originalScale);
-      playerSprite.setTexture(AssetKeys.LION_IDLE);
+      scene.player?.normalizeLionAfterFail?.();
       playerSprite.setAngle(0);
       playerSprite.setAlpha(1);
       playerSprite.setVisible(true);
@@ -93,20 +99,34 @@ function playThunder(scene, cloudView, playerSprite) {
     scene.tweens.add({ targets: cloudImg, alpha: 1, duration: 80 });
 
     THUNDER_FRAMES.forEach((key, i) => {
-      timers.push(scene.time.delayedCall(i * 150, () => {
+      timers.push(scene.time.delayedCall(i * 220, () => {
         if (cloudImg.active) cloudImg.setTexture(key);
       }));
     });
   }
 
-  // Strike moment: Thor thunder + camera shake
-  timers.push(scene.time.delayedCall(450, () => {
+  // Strike moment: Thor thunder + camera shake + SHOW DOLL STRIKE (SKELETON)
+  // Shifted to 660ms to match the slower Viking animation
+  timers.push(scene.time.delayedCall(660, () => {
     playSfx(scene, AssetKeys.SFX_THUNDER_STRIKE, { volume: 0.74 });
     scene.cameras.main.shake(400, 0.016);
+
+    if (playerSprite.active) {
+      playerSprite.setVisible(true);
+      playerSprite.setDepth(39); // In front of viking (viking is at 38)
+      
+      // Cycle through shock/skeleton frames more slowly (250ms each)
+      SHOCK_FRAMES.forEach((key, i) => {
+        timers.push(scene.time.delayedCall(i * 250, () => {
+          if (playerSprite.active) playerSprite.setTexture(key);
+        }));
+      });
+    }
   }));
 
   // Final fall plummet + Camera follow
-  timers.push(scene.time.delayedCall(1100, () => {
+  // Delayed to 1800ms to allow the full shock sequence to be seen
+  timers.push(scene.time.delayedCall(1800, () => {
     if (!playerSprite.active) return;
     
     // Switch cloud back to basic thunder cloud (no character)
@@ -114,8 +134,7 @@ function playThunder(scene, cloudView, playerSprite) {
         cloudImg.setTexture(AssetKeys.THUNDER_1);
     }
 
-    // Now show the actual player sprite to start the fall
-    playerSprite.setVisible(true);
+    // Ensure we end on the final shock/fall frame
     playerSprite.setTexture(AssetKeys.LION_SHOCK_4);
 
     const groundY = scene.cloudManager.groundPeakY;
@@ -206,7 +225,7 @@ function playBurst(scene, cloudView, playerSprite) {
     if (!playerSprite.active) return;
 
     // Use the fall.png sprite for broken cloud
-    playerSprite.setTexture(AssetKeys.LION_FALL_BROKEN);
+    playerSprite.setTexture(AssetKeys.LION_FALL);
 
     const groundY = scene.cloudManager.groundPeakY;
     const fallDist = groundY - playerSprite.y;
@@ -219,7 +238,13 @@ function playBurst(scene, cloudView, playerSprite) {
       y:        groundY,
       angle:    180,
       duration: duration,
-      ease:     "Quad.easeIn"
+      ease:     "Quad.easeIn",
+      onComplete: () => {
+        if (playerSprite.active) {
+          playerSprite.setTexture(AssetKeys.LION_SHOCK_4);
+          playerSprite.setAlpha(1);
+        }
+      }
     });
 
     // Camera follows back to ground
@@ -242,6 +267,7 @@ function playBurst(scene, cloudView, playerSprite) {
 }
 function playLightning(scene, cloudView, playerSprite) {
   const timers = [];
+  let boltImg = null;
 
   if (cloudView) {
     cloudView.revealBadCloud();
@@ -255,6 +281,41 @@ function playLightning(scene, cloudView, playerSprite) {
       repeat:   1,
       ease:     "Sine.easeInOut"
     });
+  }
+
+  const hrBolt = scene.scale.height / 960;
+  const boltReady =
+    BOLT_KEYS.length &&
+    scene.textures.exists(BOLT_KEYS[0]) &&
+    cloudView;
+
+  if (boltReady) {
+    boltImg = scene.add.image(cloudView.x, cloudView.y - Math.round(28 * hrBolt), BOLT_KEYS[0])
+      .setOrigin(0.5, 0)
+      .setDepth(43)
+      .setAlpha(0)
+      .setScale(0.34 * hrBolt);
+
+    scene.tweens.add({ targets: boltImg, alpha: 1, duration: 45 });
+
+    BOLT_KEYS.forEach((key, i) => {
+      timers.push(scene.time.delayedCall(35 + i * 52, () => {
+        if (boltImg && boltImg.active && scene.textures.exists(key)) {
+          boltImg.setTexture(key);
+        }
+      }));
+    });
+
+    timers.push(scene.time.delayedCall(520, () => {
+      if (boltImg && boltImg.active) {
+        scene.tweens.add({
+          targets:  boltImg,
+          alpha:    0,
+          duration: 120,
+          onComplete: () => boltImg.destroy()
+        });
+      }
+    }));
   }
 
   scene.cameras.main.shake(300, 0.01);
@@ -296,5 +357,6 @@ function playLightning(scene, cloudView, playerSprite) {
   return () => {
     timers.forEach(t => t.remove(false));
     scene.tweens.killTweensOf(playerSprite);
+    if (boltImg && boltImg.active) boltImg.destroy();
   };
 }

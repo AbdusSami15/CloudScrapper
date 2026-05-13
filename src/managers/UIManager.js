@@ -1,5 +1,6 @@
 import { GAME_STATES, LOCKED_STATES } from "../state/GameStates.js";
 import { GAME_CONFIG }                from "../config/GameConfig.js";
+import { UI_FONT_FAMILY }             from "../config/UiFont.js";
 import AssetKeys                      from "./AssetKeys.js";
 
 /**
@@ -102,13 +103,7 @@ export default class UIManager {
       this._muteContainer.input.cursor = "pointer";
     }
 
-    this._muteContainer.on("pointerdown", (pointer, _lx, _ly, event) => {
-      if (event && typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-      if (pointer && pointer.event && typeof pointer.event.stopPropagation === "function") {
-        pointer.event.stopPropagation();
-      }
+    this._muteContainer.on("pointerdown", () => {
       this._toggleMuteControl();
     });
 
@@ -163,6 +158,11 @@ export default class UIManager {
     const next = !this.scene.sound.mute;
     this.scene.sound.setMute(next);
 
+    // Resume context on unmute if suspended (browser requirement)
+    if (!next && this.scene.sound.context && this.scene.sound.context.state === "suspended") {
+      this.scene.sound.context.resume();
+    }
+
     try {
       localStorage.setItem(GAME_CONFIG.storageKeys.audioMuted, next ? "1" : "0");
     } catch (_e) {
@@ -171,7 +171,7 @@ export default class UIManager {
 
     this._syncMuteVisual();
 
-    if (!next && this.scene.gameManager?.isState(GAME_STATES.BETTING)) {
+    if (!next) {
       this.scene.resumeBackgroundMusic();
     }
   }
@@ -288,14 +288,14 @@ export default class UIManager {
 
     // Style presets
     const labelStyle = {
-      fontFamily:    "Tilt Warp",
+      fontFamily:    UI_FONT_FAMILY,
       fontSize:      `${Math.max(9, Math.round(10 * hr))}px`,
       color:         "#cbd5e1",
       fontStyle:     "bold",
       letterSpacing: 1.4
     };
     const valueStyle = {
-      fontFamily: "Tilt Warp",
+      fontFamily: UI_FONT_FAMILY,
       fontSize:   `${Math.round(17 * hr)}px`,
       color:      "#ffffff",
       fontStyle:  "bold"
@@ -364,7 +364,7 @@ export default class UIManager {
     addLabelCentered(xAuto + wAuto / 2, "AUTO");
     this.autoValueText = scene.add.text(
       xAuto + wAuto / 2, valueBotY, "\u21bb",
-      { fontFamily: "Tilt Warp", fontSize: `${Math.round(20 * hr)}px`,
+      { fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(20 * hr)}px`,
         color: "#cbd5e1", fontStyle: "bold" }
     ).setOrigin(0.5, 1).setDepth(102).setScrollFactor(0);
     this.autoButton = scene.add.zone(xAuto, cellY, wAuto, cellH)
@@ -390,12 +390,12 @@ export default class UIManager {
     this._playLabel = scene.add.text(
       x + w / 2, y + h / 2, "PLAY",
       {
-        fontFamily:      "Tilt Warp",
+        fontFamily:      UI_FONT_FAMILY,
         fontSize:        `${Math.round(20 * hr)}px`,
         color:           "#ffffff",
         fontStyle:       "bold",
         stroke:          "#0a3a17",
-        strokeThickness: Math.round(2 * hr),
+        strokeThickness: Math.round(5 * hr),
         letterSpacing:   1.2
       }
     ).setOrigin(0.5).setDepth(103).setScrollFactor(0);
@@ -403,7 +403,7 @@ export default class UIManager {
     this._playSubLabel = scene.add.text(
       x + w / 2, y + h / 2 + Math.round(16 * hr), "",
       {
-        fontFamily: "Tilt Warp",
+        fontFamily: UI_FONT_FAMILY,
         fontSize:   `${Math.round(11 * hr)}px`,
         color:      "#dcfce7",
         fontStyle:  "bold"
@@ -466,12 +466,12 @@ export default class UIManager {
     this.statusText = scene.add.text(
       sw * 0.5, this._statusBetY, "Place a bet and press PLAY",
       {
-        fontFamily:      "Tilt Warp",
+        fontFamily:      UI_FONT_FAMILY,
         fontSize:        `${Math.round(18 * hr)}px`,
         color:           "#ffffff",
         fontStyle:       "bold",
         stroke:          "#08243a",
-        strokeThickness: Math.round(4 * hr)
+        strokeThickness: Math.round(8 * hr)
       }
     ).setOrigin(0.5).setDepth(101).setScrollFactor(0);
 
@@ -481,7 +481,7 @@ export default class UIManager {
     this.multiplierBadge = scene.add.text(
       sw * 0.5, this._badgeBetY, "",
       {
-        fontFamily:      "Tilt Warp",
+        fontFamily:      UI_FONT_FAMILY,
         fontSize:        `${Math.round(28 * hr)}px`,
         color:           "#facc15",
         fontStyle:       "bold",
@@ -575,12 +575,12 @@ export default class UIManager {
     this._modalTitle = scene.add.text(
       cardX + cardW / 2, cardY + Math.round(36 * hr), "YOU WON!",
       {
-        fontFamily:      "Tilt Warp",
+        fontFamily:      UI_FONT_FAMILY,
         fontSize:        `${Math.round(30 * hr)}px`,
         color:           "#22c55e",
         fontStyle:       "bold",
         stroke:          "#000000",
-        strokeThickness: Math.round(4 * hr)
+        strokeThickness: Math.round(9 * hr)
       }
     ).setOrigin(0.5).setDepth(202).setVisible(false).setScrollFactor(0);
 
@@ -589,14 +589,14 @@ export default class UIManager {
     const statW  = cardW / 3;
 
     const statLabelStyle = {
-      fontFamily:    "Tilt Warp",
+      fontFamily:    UI_FONT_FAMILY,
       fontSize:      `${Math.round(10 * hr)}px`,
       color:         "#94a3b8",
       fontStyle:     "bold",
       letterSpacing: 1.4
     };
     const statValueStyle = {
-      fontFamily: "Tilt Warp",
+      fontFamily: UI_FONT_FAMILY,
       fontSize:   `${Math.round(20 * hr)}px`,
       color:      "#ffffff",
       fontStyle:  "bold"
@@ -644,12 +644,12 @@ export default class UIManager {
     this._modalBtnText = scene.add.text(
       btnX + btnW / 2, btnY + btnH / 2, "PLAY AGAIN",
       {
-        fontFamily:      "Tilt Warp",
+        fontFamily:      UI_FONT_FAMILY,
         fontSize:        `${Math.round(18 * hr)}px`,
         color:           "#ffffff",
         fontStyle:       "bold",
         stroke:          "#0a3a17",
-        strokeThickness: Math.round(2 * hr),
+        strokeThickness: Math.round(5 * hr),
         letterSpacing:   1.2
       }
     ).setOrigin(0.5).setDepth(203).setVisible(false).setScrollFactor(0);
@@ -700,7 +700,7 @@ export default class UIManager {
 
     // Header
     const title = scene.add.text(gridPad, Math.round(24 * hr), "Autoplay settings", {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(20 * hr)}px`, color: "#ffffff", fontStyle: "bold"
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(20 * hr)}px`, color: "#ffffff", fontStyle: "bold"
     });
 
     // Close Button (X)
@@ -713,7 +713,7 @@ export default class UIManager {
     this._apCloseGfx.fillCircle(closeX, closeY, closeSize / 2);
     
     this._apCloseText = scene.add.text(closeX, closeY, "✕", {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff"
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff"
     }).setOrigin(0.5);
     
     this._apCloseZone = scene.add.zone(closeX, closeY, closeSize, closeSize).setOrigin(0.5)
@@ -724,7 +724,7 @@ export default class UIManager {
     });
 
     const sub = scene.add.text(gridPad, Math.round(65 * hr), "NUMBERS OF AUTOSPINS:", {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(11 * hr)}px`, color: "#94a3b8"
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(11 * hr)}px`, color: "#94a3b8"
     });
 
     this._apContainer.add([title, this._apCloseGfx, this._apCloseText, this._apCloseZone, sub]);
@@ -746,7 +746,7 @@ export default class UIManager {
 
       const bg = scene.add.graphics();
       const txt = scene.add.text(bx + btnW / 2, by + btnH / 2, String(val), {
-        fontFamily: "Tilt Warp", fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff", fontStyle: "bold"
+        fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff", fontStyle: "bold"
       }).setOrigin(0.5);
 
       const draw = (active) => {
@@ -787,7 +787,7 @@ export default class UIManager {
     this._apActionGfx.fillRoundedRect(sBtnX, sBtnY, sBtnW, sBtnH, Math.round(12 * hr));
 
     this._apActionText = scene.add.text(sBtnX + sBtnW / 2, sBtnY + sBtnH / 2, "", {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff", fontStyle: "bold"
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(18 * hr)}px`, color: "#ffffff", fontStyle: "bold"
     }).setOrigin(0.5);
     
     this._apActionZone = scene.add.zone(sBtnX, sBtnY, sBtnW, sBtnH).setOrigin(0, 0)
@@ -800,7 +800,7 @@ export default class UIManager {
     });
 
     this._apTargetText = scene.add.text(cardW - gridPad, 0, String(this._selectedAutoCount), {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(20 * hr)}px`, color: "#ffffff", fontStyle: "bold"
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(20 * hr)}px`, color: "#ffffff", fontStyle: "bold"
     }).setOrigin(1, 0.5);
     this._apTargetText.y = Math.round(75 * hr);
 
@@ -885,7 +885,7 @@ export default class UIManager {
     this._qbCard.strokeRoundedRect(cardX, cardY, cardW, cardH, radius);
 
     this._qbTitle = scene.add.text(cardX + Math.round(20 * hr), cardY + Math.round(18 * hr), "QUICK BET", {
-      fontFamily: "Tilt Warp", fontSize: `${Math.round(14 * hr)}px`, color: "#94a3b8", letterSpacing: 1.5
+      fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(14 * hr)}px`, color: "#94a3b8", letterSpacing: 1.5
     }).setDepth(212).setVisible(false).setScrollFactor(0);
 
     // Button Grid (4 columns)
@@ -912,7 +912,7 @@ export default class UIManager {
       bg.strokeRoundedRect(bx, by, btnW, btnH, br);
 
       const txt = scene.add.text(bx + btnW / 2, by + btnH / 2, String(val), {
-        fontFamily: "Tilt Warp", fontSize: `${Math.round(16 * hr)}px`, color: "#ffffff", fontStyle: "bold"
+        fontFamily: UI_FONT_FAMILY, fontSize: `${Math.round(16 * hr)}px`, color: "#ffffff", fontStyle: "bold"
       }).setOrigin(0.5).setDepth(213).setVisible(false).setScrollFactor(0);
 
       const zone = scene.add.zone(bx, by, btnW, btnH).setOrigin(0, 0)
@@ -1193,7 +1193,7 @@ export default class UIManager {
     g.strokeRoundedRect(x - size / 2, y - size / 2, size, size, r);
 
     this.scene.add.text(x, y, label, {
-      fontFamily: "Tilt Warp", fontSize, color: "#ffffff", fontStyle: "bold"
+      fontFamily: UI_FONT_FAMILY, fontSize, color: "#ffffff", fontStyle: "bold"
     }).setOrigin(0.5).setDepth(103).setScrollFactor(0);
 
     const zone = this.scene.add.zone(x, y, size, size)

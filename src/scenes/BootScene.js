@@ -22,6 +22,20 @@ export default class BootScene extends Phaser.Scene {
     });
 
     // ── Asset Loading ───────────────────────────────────────────────────
+    // `&` in folder name must be URL-encoded for reliable fetches.
+    const bgParallaxRoot = "assets/bg-base%26sky";
+    const planeRoot = "assets/bg-object-airplane";
+
+    this.load.image(AssetKeys.BG_PARALLAX_SKY_FAR, `${bgParallaxRoot}/bg-sky2.png`);
+    this.load.image(AssetKeys.BG_PARALLAX_SKY_NEAR, `${bgParallaxRoot}/bg-sky1.png`);
+    this.load.image(AssetKeys.BG_PARALLAX_BASE, `${bgParallaxRoot}/bg-base.png`);
+
+    this.load.image(AssetKeys.BG_PLANE_1, `${planeRoot}/bg-0bject-1.png`);
+    this.load.image(AssetKeys.BG_PLANE_2, `${planeRoot}/bg-0bject-2.png`);
+    this.load.image(AssetKeys.BG_PLANE_3, `${planeRoot}/bg-0bject-3.png`);
+    this.load.image(AssetKeys.BG_PLANE_5, `${planeRoot}/bg-0bject-5.png`);
+    this.load.image(AssetKeys.BG_PLANE_7, `${planeRoot}/bg-0bject-7.png`);
+
     this.load.image(AssetKeys.BG_SKY,    "assets/bg/sky.png");
     this.load.image(AssetKeys.BG_CITY,   "assets/bg/city.png");
     this.load.image(AssetKeys.BG_GROUND, "assets/bg/ground.png");
@@ -37,10 +51,16 @@ export default class BootScene extends Phaser.Scene {
     this.load.image(AssetKeys.LOGO, "assets/logo_CP.png");
     this.load.image(AssetKeys.UPPER_LOGO, "assets/upperlogo.png");
 
-    this.load.image(AssetKeys.LION_IDLE,  "assets/lion/lion_idle.png");
-    this.load.image(AssetKeys.LION_JUMP,  "assets/lion/lion_jump.png");
-    this.load.image(AssetKeys.LION_HAPPY, "assets/lion/lion_happy.png");
-    this.load.image(AssetKeys.LION_FALL,  "assets/lion/lion_fall.png");
+    const lionJp = "assets/lion-jump-png";
+    this.load.image(AssetKeys.LION_IDLE,  `${lionJp}/1-stand.png`);
+    this.load.image(AssetKeys.LION_JP_PREPARE, `${lionJp}/2-prepare.png`);
+    this.load.image(AssetKeys.LION_JP_JUMP, `${lionJp}/3-jump.png`);
+    this.load.image(AssetKeys.LION_JP_MIDAIR, `${lionJp}/4-mid-air.png`);
+    this.load.image(AssetKeys.LION_JP_READYLAND, `${lionJp}/5-readytoland.png`);
+    this.load.image(AssetKeys.LION_JP_LAND, `${lionJp}/6-land.png`);
+    this.load.image(AssetKeys.LION_JUMP,  `${lionJp}/3-jump.png`);
+    this.load.image(AssetKeys.LION_HAPPY, `${lionJp}/7-success.png`);
+    this.load.image(AssetKeys.LION_FALL, `${lionJp}/8-failure.png`);
     this.load.image(AssetKeys.LION_FALL_BROKEN, "assets/lion/fall.png");
 
     this.load.image(AssetKeys.LION_SHOCK_1, "assets/lion/lion-shock-1.png");
@@ -54,6 +74,13 @@ export default class BootScene extends Phaser.Scene {
     this.load.image(AssetKeys.THUNDER_4, "assets/thunder/thunder-4.png");
     this.load.image(AssetKeys.THUNDER_5, "assets/thunder/thunder-5.png");
     this.load.image(AssetKeys.THUNDER_6, "assets/thunder/thunder-6.png");
+
+    const lx = "assets/lightning";
+    this.load.image(AssetKeys.LIGHTNING_BOLT_1, `${lx}/thunder-1.png`);
+    this.load.image(AssetKeys.LIGHTNING_BOLT_2, `${lx}/thunder-2.png`);
+    this.load.image(AssetKeys.LIGHTNING_BOLT_3, `${lx}/thunder-3.png`);
+    this.load.image(AssetKeys.LIGHTNING_BOLT_4, `${lx}/thunder-4.png`);
+    this.load.image(AssetKeys.LIGHTNING_BOLT_5, `${lx}/thunder-5.png`);
 
     this.load.audio(AssetKeys.SFX_CLICK, "src/sounds/click.mp3");
     this.load.audio(AssetKeys.SFX_START, "src/sounds/start.mp3");

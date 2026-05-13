@@ -21,7 +21,12 @@ export default class CloudManager {
     this._difficultyKey = null;
   }
 
-  get startY() { return ry(this.scene, 540); }
+  get startY() {
+    const isLandscape = this.scene.scale.width > this.scene.scale.height;
+    // Landscape: clouds start higher; portrait: slightly lower opening column than old 540 ref.
+    const refY = isLandscape ? 405 : 590;
+    return ry(this.scene, refY);
+  }
 
   get groundY() {
     const sw  = this.scene.scale.width;
@@ -33,7 +38,10 @@ export default class CloudManager {
 
   get groundPeakY() {
     const isLandscape = this.scene.scale.width > this.scene.scale.height;
-    return isLandscape ? this.groundY : ry(this.scene, 860);
+    // Portrait: feet on mound (lower ref Y → lion sits slightly higher).
+    if (!isLandscape) return ry(this.scene, 868);
+    // Landscape / PC: crest of parallax hill — higher on screen than flat groundY so feet sit on peak.
+    return ry(this.scene, 678);
   }
 
   get stepSpacingY() {
@@ -92,6 +100,7 @@ export default class CloudManager {
       this._spawnCloud(i, data);
     }
 
+    this.syncMultiplierReachColors();
     return firstCloud;
   }
 
@@ -109,6 +118,16 @@ export default class CloudManager {
   advanceAfterLanding() {
     this._playerCloudIdx++;
     this._ensureCloudsAhead();
+    this.syncMultiplierReachColors();
+  }
+
+  /** Client spec #15: landed clouds = gold (#FACC14), ahead = orange (#FF8F14). */
+  syncMultiplierReachColors() {
+    const stoodIdx = this._playerCloudIdx;
+    for (const cloud of this.clouds) {
+      if (!cloud.cloudData || typeof cloud.setMultiplierReached !== "function") continue;
+      cloud.setMultiplierReached(cloud.cloudData.index <= stoodIdx);
+    }
   }
 
   /** Spawn more clouds if player is getting close to the top */
