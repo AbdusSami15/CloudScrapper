@@ -1,5 +1,11 @@
 import AssetKeys from "../managers/AssetKeys.js";
 
+function playSfx(scene, key, opts) {
+  if (scene.cache.audio.exists(key)) {
+    scene.sound.play(key, opts);
+  }
+}
+
 const THUNDER_FRAMES = [
   AssetKeys.THUNDER_1,
   AssetKeys.THUNDER_2,
@@ -93,8 +99,9 @@ function playThunder(scene, cloudView, playerSprite) {
     });
   }
 
-  // Camera shake on strike frame
+  // Strike moment: Thor thunder + camera shake
   timers.push(scene.time.delayedCall(450, () => {
+    playSfx(scene, AssetKeys.SFX_THUNDER_STRIKE, { volume: 0.74 });
     scene.cameras.main.shake(400, 0.016);
   }));
 
@@ -153,6 +160,7 @@ function playBurst(scene, cloudView, playerSprite) {
   if (cloudView) {
     // Show broken cloud image
     cloudView.revealBrokenCloud();
+    playSfx(scene, AssetKeys.SFX_CLOUD_POOF, { volume: 0.68 });
 
     // Cloud crack + shake effect
     scene.tweens.add({
@@ -237,6 +245,7 @@ function playLightning(scene, cloudView, playerSprite) {
 
   if (cloudView) {
     cloudView.revealBadCloud();
+    playSfx(scene, AssetKeys.SFX_LIGHTNING_SHOCK, { volume: 0.72 });
     scene.tweens.add({
       targets:  cloudView,
       scaleX:   1.08,

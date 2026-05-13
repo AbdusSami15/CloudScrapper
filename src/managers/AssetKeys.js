@@ -45,6 +45,14 @@ const AssetKeys = {
   SFX_LOSE:  "sfx_lose",
   SFX_JUMP:  "sfx_jump",
   SFX_ITEM:  "sfx_item",
+
+  /** Client pack: Thor / thunder strike (bad-cloud “thunder” fail) */
+  SFX_THUNDER_STRIKE: "sfx_thunder_strike",
+  /** Electric hit (bad-cloud “lightning” fail) */
+  SFX_LIGHTNING_SHOCK: "sfx_lightning_shock",
+  /** Cloud burst / pop (bad-cloud “burst” fail) */
+  SFX_CLOUD_POOF: "sfx_cloud_poof",
+
   MUSIC_BG:  "music_bg"
 };
 

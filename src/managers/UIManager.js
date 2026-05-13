@@ -46,10 +46,134 @@ export default class UIManager {
     this._buildBottomPanel();
     this._buildStatusText();
     this._buildResultModal();
+    this._buildMuteControl();
     this._subscribeToGameManager();
     
-    // Reposition HTML elements on window resize
-    scene.scale.on("resize", () => this._repositionHtmlElements());
+    // Reposition HTML + mute on window resize
+    scene.scale.on("resize", () => this._onUiResize());
+  }
+
+  _onUiResize() {
+    const sw = this.scene.scale.width;
+    const sh = this.scene.scale.height;
+    const dpr = Math.max(1, sw / window.innerWidth);
+    this._hr = Math.min(Math.min(sw, sh) / 540, dpr);
+    this._sw = sw;
+    this._sh = sh;
+    this._dpr = dpr;
+    this._visH = sh;
+
+    this._repositionMuteControl();
+    this._repositionHtmlElements();
+  }
+
+  /** Cloud-themed mute toggle (matches sample: fluffy cloud + yellow glyph + black stroke). */
+  _buildMuteControl() {
+    const { scene } = this;
+    const hr = this._hr;
+
+    const cw = Math.round(82 * hr);
+    const ch = Math.round(46 * hr);
+    const pad = Math.round(12 * hr);
+    const cx = pad + cw / 2;
+    const cy = pad + ch / 2;
+
+    const cloud = scene.add.image(0, 0, AssetKeys.CLOUD_V2_1).setOrigin(0.5);
+    cloud.setDisplaySize(cw, ch);
+
+    const stroke = Math.max(3, Math.round(4 * hr));
+    const fs = Math.max(15, Math.round(21 * hr));
+    this._muteIcon = scene.add.text(0, -1, "♪", {
+      fontFamily: "Arial Black, Arial, sans-serif",
+      fontSize:   `${fs}px`,
+      color:      "#fde047",
+      fontStyle:  "bold"
+    })
+      .setOrigin(0.5)
+      .setStroke("#000000", stroke);
+
+    this._muteContainer = scene.add.container(cx, cy, [cloud, this._muteIcon])
+      .setDepth(210)
+      .setScrollFactor(0);
+
+    const hit = new Phaser.Geom.Rectangle(-cw / 2, -ch / 2, cw, ch);
+    this._muteContainer.setInteractive(hit, Phaser.Geom.Rectangle.Contains);
+    if (this._muteContainer.input) {
+      this._muteContainer.input.cursor = "pointer";
+    }
+
+    this._muteContainer.on("pointerdown", (pointer, _lx, _ly, event) => {
+      if (event && typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+      if (pointer && pointer.event && typeof pointer.event.stopPropagation === "function") {
+        pointer.event.stopPropagation();
+      }
+      this._toggleMuteControl();
+    });
+
+    this._muteCloudW = cw;
+    this._muteCloudH = ch;
+
+    this._syncMuteVisual();
+  }
+
+  _repositionMuteControl() {
+    if (!this._muteContainer || !this._muteIcon) return;
+
+    const hr = this._hr;
+    const cw = Math.round(82 * hr);
+    const ch = Math.round(46 * hr);
+    const pad = Math.round(12 * hr);
+    const cx = pad + cw / 2;
+    const cy = pad + ch / 2;
+
+    this._muteCloudW = cw;
+    this._muteCloudH = ch;
+
+    this._muteContainer.setPosition(cx, cy);
+
+    const cloud = this._muteContainer.list[0];
+    if (cloud && cloud.setDisplaySize) {
+      cloud.setDisplaySize(cw, ch);
+    }
+
+    const stroke = Math.max(3, Math.round(4 * hr));
+    const fs = Math.max(15, Math.round(21 * hr));
+    this._muteIcon.setFontSize(fs);
+    this._muteIcon.setStroke("#000000", stroke);
+
+    if (this._muteContainer.input && this._muteContainer.input.hitArea) {
+      const r = this._muteContainer.input.hitArea;
+      if (r instanceof Phaser.Geom.Rectangle) {
+        r.setTo(-cw / 2, -ch / 2, cw, ch);
+      }
+    }
+
+    this._syncMuteVisual();
+  }
+
+  _syncMuteVisual() {
+    if (!this._muteIcon) return;
+    const muted = this.scene.sound.mute === true;
+    this._muteIcon.setText(muted ? "✕" : "♪");
+  }
+
+  _toggleMuteControl() {
+    const next = !this.scene.sound.mute;
+    this.scene.sound.setMute(next);
+
+    try {
+      localStorage.setItem(GAME_CONFIG.storageKeys.audioMuted, next ? "1" : "0");
+    } catch (_e) {
+      /* ignore quota / privacy mode */
+    }
+
+    this._syncMuteVisual();
+
+    if (!next && this.scene.gameManager?.isState(GAME_STATES.BETTING)) {
+      this.scene.resumeBackgroundMusic();
+    }
   }
 
   _repositionHtmlElements() {
@@ -59,7 +183,6 @@ export default class UIManager {
     }
 
     if (!this._apSpinSliderEl) return;
-    
     const cardW = Math.min(Math.round(440 * hr), sw - Math.round(30 * hr));
     const cardH = Math.round(420 * hr);
     const cardX = (sw - cardW) / 2;
@@ -971,6 +1094,13 @@ export default class UIManager {
   //  Public API used by RoundManager / GameScene
   // ════════════════════════════════════════════════════════════════════════
   getBottomPanelTop() { return this._panelTop; }
+
+  /** Prevents gameplay tap-to-jump from firing when touching the mute cloud. */
+  isPointerOverMuteControl(pointer) {
+    if (!this._muteContainer || !this._muteContainer.scene) return false;
+    const b = this._muteContainer.getBounds();
+    return Phaser.Geom.Rectangle.Contains(b, pointer.x, pointer.y);
+  }
 
   setStatus(text)         { this.statusText.setText(text); }
 

@@ -1,4 +1,5 @@
 import AssetKeys from "../managers/AssetKeys.js";
+import { GAME_CONFIG } from "../config/GameConfig.js";
 import GameManager from "../managers/GameManager.js";
 import RoundManager from "../managers/RoundManager.js";
 import CloudManager from "../managers/CloudManager.js";
@@ -11,6 +12,11 @@ export default class GameScene extends Phaser.Scene {
   constructor() { super("GameScene"); }
 
   create() {
+    const mutedPref =
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem(GAME_CONFIG.storageKeys.audioMuted) === "1";
+    this.sound.setMute(!!mutedPref);
+
     this.createBackground();
 
     // ── Manager construction order ──────────────────────────────────────
@@ -26,14 +32,15 @@ export default class GameScene extends Phaser.Scene {
     this.roundManager = new RoundManager(this);
     this.uiManager = new UIManager(this);
 
-    // Play background music (with safety check and looping)
+    // Background music — loop; stopped on loss (see handleRoundResultForAudio)
     if (this.cache.audio.exists(AssetKeys.MUSIC_BG)) {
       if (!this.bgm) {
-        this.bgm = this.sound.add(AssetKeys.MUSIC_BG, { loop: true, volume: 0.4 });
+        this.bgm = this.sound.add(AssetKeys.MUSIC_BG, {
+          loop:   true,
+          volume: GAME_CONFIG.bgmVolume
+        });
       }
-      if (!this.bgm.isPlaying) {
-        this.bgm.play();
-      }
+      this.resumeBackgroundMusic();
     } else {
       console.warn("Background music not found in cache, skipping playback.");
     }
@@ -190,8 +197,31 @@ export default class GameScene extends Phaser.Scene {
   _onStateChanged(next) {
     if (next === GAME_STATES.BETTING) {
       this._enterBettingVisuals();
+      this.resumeBackgroundMusic();
     } else if (next === GAME_STATES.STARTING) {
       this._enterRoundVisuals();
+    }
+  }
+
+  /** Win / cashout keeps BGM; loss stops until next BETTING screen. */
+  handleRoundResultForAudio(result) {
+    if (result?.outcome !== "LOSS" || !this.bgm) return;
+    if (this.bgm.isPlaying) {
+      this.bgm.stop();
+    }
+  }
+
+  resumeBackgroundMusic() {
+    if (!this.cache.audio.exists(AssetKeys.MUSIC_BG)) return;
+    if (!this.bgm) {
+      this.bgm = this.sound.add(AssetKeys.MUSIC_BG, {
+        loop:   true,
+        volume: GAME_CONFIG.bgmVolume
+      });
+    }
+    if (this.sound.mute) return;
+    if (!this.bgm.isPlaying) {
+      this.bgm.play();
     }
   }
 
@@ -217,6 +247,7 @@ export default class GameScene extends Phaser.Scene {
   bindInput() {
     // Canvas tap (above the bottom panel) → JUMP if state allows.
     this.input.on("pointerdown", (pointer) => {
+      if (this.uiManager.isPointerOverMuteControl(pointer)) return;
       if (pointer.y >= this.uiManager.getBottomPanelTop()) return;
       this._tryJumpInput();
     });

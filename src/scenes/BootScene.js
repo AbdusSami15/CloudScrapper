@@ -61,6 +61,11 @@ export default class BootScene extends Phaser.Scene {
     this.load.audio(AssetKeys.SFX_WIN,   "src/sounds/gamewin.mp3");
     this.load.audio(AssetKeys.SFX_LOSE,  "src/sounds/gameover.mp3");
     this.load.audio(AssetKeys.SFX_JUMP,  "src/sounds/jump.mp3");
+
+    this.load.audio(AssetKeys.SFX_THUNDER_STRIKE,  "assets/sounds/thundersoundCut.mp3");
+    this.load.audio(AssetKeys.SFX_LIGHTNING_SHOCK, "assets/sounds/electric-shock-sound-effect.mp3");
+    this.load.audio(AssetKeys.SFX_CLOUD_POOF,       "assets/sounds/cloud_poof.mp3");
+
     this.load.audio(AssetKeys.MUSIC_BG, {
       key: AssetKeys.MUSIC_BG,
       url: "src/sounds/bgmusic.mpeg",

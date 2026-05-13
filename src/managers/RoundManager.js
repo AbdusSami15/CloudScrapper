@@ -265,7 +265,9 @@ export default class RoundManager {
   _showResult() {
     const gm = this.scene.gameManager;
     if (!gm.setState(GAME_STATES.RESULT, "show_result")) return;
-    
+
+    this.scene.handleRoundResultForAudio(this.lastResult);
+
     this.scene.uiManager.showResult(this.lastResult);
 
     if (gm.isAutoPlaying) {

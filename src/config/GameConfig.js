@@ -8,8 +8,12 @@ export const GAME_CONFIG = Object.freeze({
   storageKeys: {
     balance:    "cloudscrapper_balance",
     bet:        "cloudscrapper_bet",
-    difficulty: "cloudscrapper_difficulty"
+    difficulty: "cloudscrapper_difficulty",
+    audioMuted: "cloudscrapper_audio_muted"
   },
+
+  /** Master BGM level (linear 0–1). Slightly low so UI/SFX read clearly. */
+  bgmVolume: 0.22,
 
   // UI / animation
   balanceTweenMs:  450,
