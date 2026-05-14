@@ -55,6 +55,9 @@ const AssetKeys = {
   THUNDER_4: "thunder_4",
   THUNDER_5: "thunder_5",
   THUNDER_6: "thunder_6",
+  THUNDER_FACE_1: "thunder_face_1",
+  THUNDER_FACE_2: "thunder_face_2",
+  THUNDER_FACE_3: "thunder_face_3",
 
   /** Stylised bolts (`assets/lightning/`) — lightning fail FX */
   LIGHTNING_BOLT_1: "lightning_bolt_1",

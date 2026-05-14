@@ -74,6 +74,9 @@ export default class BootScene extends Phaser.Scene {
     this.load.image(AssetKeys.THUNDER_4, "assets/thunder/thunder-4.png");
     this.load.image(AssetKeys.THUNDER_5, "assets/thunder/thunder-5.png");
     this.load.image(AssetKeys.THUNDER_6, "assets/thunder/thunder-6.png");
+    this.load.image(AssetKeys.THUNDER_FACE_1, "assets/thunder/1 face.png");
+    this.load.image(AssetKeys.THUNDER_FACE_2, "assets/thunder/2 face.png");
+    this.load.image(AssetKeys.THUNDER_FACE_3, "assets/thunder/3 face.png");
 
     const lx = "assets/lightning";
     this.load.image(AssetKeys.LIGHTNING_BOLT_1, `${lx}/thunder-1.png`);

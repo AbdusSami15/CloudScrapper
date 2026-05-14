@@ -45,7 +45,14 @@ export default class CloudView extends Phaser.GameObjects.Container {
       strokeThickness: Math.round(5 * hr)
     }).setOrigin(0.5);
 
+    // 2. Add cloud and multiplier
     this.add([this.cloudSprite, this.multiplierText]);
+
+    // 1. Add faceOverlay on TOP but centered (to look 'hidden' in the mist)
+    this.faceOverlay = scene.add.image(0, 0, AssetKeys.THUNDER_FACE_1);
+    this.faceOverlay.setOrigin(0.5, 0.5);
+    this.faceOverlay.setVisible(false);
+    this.add(this.faceOverlay);
 
     this.cloudData = null;
     this.isActiveCloud = false;
@@ -59,6 +66,9 @@ export default class CloudView extends Phaser.GameObjects.Container {
 
     this.setDepth(5);
     scene.add.existing(this);
+
+    this._isRevealed = false;
+    this._peekTimer = null;
   }
 
   bindData(cloudData) {
@@ -72,6 +82,9 @@ export default class CloudView extends Phaser.GameObjects.Container {
 
     // Start frame animation (each cloud has a random offset so they don't all sync)
     this._startFrameAnimation();
+
+    // Start peeking timer if it's a bad cloud
+    this._startPeekTimer();
   }
 
   _startIdleBobbing() {
@@ -159,6 +172,11 @@ export default class CloudView extends Phaser.GameObjects.Container {
     // Swap to dark Thor cloud when the player lands on a bad one
     const goodDisplayW = this.cloudSprite.width * this._cloudScale;
     this.cloudSprite.setTexture(AssetKeys.CLOUD_BAD);
+    this._isRevealed = true;
+    if (this._peekTimer) {
+      this._peekTimer.remove();
+      this._peekTimer = null;
+    }
     // Match the good cloud's display width using the bad texture's native width
     const badScale = goodDisplayW / this.cloudSprite.width;
     this.cloudSprite.setScale(badScale);
@@ -174,6 +192,11 @@ export default class CloudView extends Phaser.GameObjects.Container {
     // Swap to broken cloud image
     const goodDisplayW = this.cloudSprite.width * this._cloudScale;
     this.cloudSprite.setTexture(AssetKeys.CLOUD_BROKEN);
+    this._isRevealed = true;
+    if (this._peekTimer) {
+      this._peekTimer.remove();
+      this._peekTimer = null;
+    }
     const brokenScale = goodDisplayW / this.cloudSprite.width;
     this.cloudSprite.setScale(brokenScale);
     this.multiplierText.setVisible(false);
@@ -252,5 +275,71 @@ export default class CloudView extends Phaser.GameObjects.Container {
     if (!this.multiplierText || !this.multiplierText.active) return;
     if (!this.multiplierText.visible) return;
     this.multiplierText.setColor(reached ? MULT_REACHED_GOLD : MULT_UNREACHED_ORANGE);
+  }
+
+  _startPeekTimer() {
+    if (this.cloudData?.type !== "bad") return;
+
+    this._peekTimer = this.scene.time.addEvent({
+      delay: Phaser.Math.Between(5000, 10000),
+      callback: () => {
+        // Only peek if it's a future cloud (ahead of the player's current position)
+        const playerIdx = this.scene.cloudManager._playerCloudIdx;
+        if (this.cloudData.index > playerIdx) {
+          this.playPeekAnimation();
+        }
+      },
+      loop: true
+    });
+  }
+
+  playPeekAnimation() {
+    if (this._isRevealed || !this.faceOverlay.active) return;
+
+    const frames = [
+      AssetKeys.THUNDER_FACE_1,
+      AssetKeys.THUNDER_FACE_2,
+      AssetKeys.THUNDER_FACE_3,
+      AssetKeys.THUNDER_FACE_2,
+      AssetKeys.THUNDER_FACE_1
+    ];
+
+    // Scale it to be about 40% of the cloud width
+    const faceScale = (this.cloudSprite.displayWidth / this.faceOverlay.width) * 0.4;
+    this.faceOverlay.setScale(faceScale);
+    
+    // Position it in the vertical middle of the cloud
+    this.faceOverlay.y = -this.cloudSprite.displayHeight * 0.08;
+    this.faceOverlay.setVisible(true);
+    this.faceOverlay.setAlpha(0);
+
+    // Fade in/out to look like it's emerging from the mist/middle
+    this.scene.tweens.add({
+      targets: this.faceOverlay,
+      alpha: 0.8,
+      duration: 500
+    });
+
+    frames.forEach((key, i) => {
+      this.scene.time.delayedCall(i * 200, () => {
+        if (this.faceOverlay.active && !this._isRevealed) {
+          this.faceOverlay.setTexture(key);
+        }
+      });
+    });
+
+    // Fade out
+    this.scene.time.delayedCall(frames.length * 200, () => {
+      if (this.faceOverlay.active) {
+        this.scene.tweens.add({
+          targets: this.faceOverlay,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => {
+            if (this.faceOverlay.active) this.faceOverlay.setVisible(false);
+          }
+        });
+      }
+    });
   }
 }

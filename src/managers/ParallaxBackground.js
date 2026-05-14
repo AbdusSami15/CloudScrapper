@@ -72,7 +72,13 @@ export default class ParallaxBackground {
     const vw = cam.worldView.width; // Use world view width
     const hw = Math.max(pl.displayWidth * 0.52, vw * 0.04);
 
-    pl.y = bandTop + Phaser.Math.FloatBetween(0, bandH);
+    // Assign lanes to prevent planes from traveling in the same row
+    const totalPlanes = this.planeAgents.length || 2;
+    const agentIdx    = this.planeAgents.indexOf(agent);
+    const laneH       = bandH / totalPlanes;
+    const laneCenter  = bandTop + (agentIdx * laneH) + (laneH * 0.5);
+    
+    pl.y = laneCenter + Phaser.Math.FloatBetween(-laneH * 0.15, laneH * 0.15);
 
     const span = laneMargin + Phaser.Math.Between(0, Math.round(vw * 0.48));
 
