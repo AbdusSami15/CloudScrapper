@@ -285,7 +285,7 @@ export default class CloudView extends Phaser.GameObjects.Container {
       callback: () => {
         // Only peek if it's a future cloud and pass a probability check (reduce frequency)
         const playerIdx = this.scene.cloudManager._playerCloudIdx;
-        if (this.cloudData.index > playerIdx && Math.random() < 0.35) {
+        if (this.cloudData.index > playerIdx && Math.random() < 0.30) {
           this.playPeekAnimation();
         }
       },
