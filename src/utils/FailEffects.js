@@ -87,11 +87,14 @@ function playThunder(scene, cloudView, playerSprite) {
     cloudView.revealBadCloud();
   }
 
+  const isPortrait = scene.scale.width < scene.scale.height;
+  const vikingScale = (isPortrait ? 0.35 : 0.52) * hr;
+
   // Overlay image that sequences through Thor frames (reveals Thor rising up)
   const cloudImg = cloudView
     ? scene.add.image(cloudView.x, cloudView.y, AssetKeys.THUNDER_1)
         .setOrigin(0.5)
-        .setScale(0.52 * hr)
+        .setScale(vikingScale)
         .setDepth(38)
         .setAlpha(0)
     : null;
@@ -124,17 +127,19 @@ function playThunder(scene, cloudView, playerSprite) {
         const cw = cloudView.cloudSprite.displayWidth;
         const ch = cloudView.cloudSprite.displayHeight;
         playerSprite.x = cloudView.x - cw * 0.04;
-        playerSprite.y = cloudView.y + ch * 0.40;
+        playerSprite.y = cloudView.y + ch * 1.0; // Lowered further
         playerSprite.setAngle(40); // Tilted right as if struck
       }
       
+      const skeletonBoost = isPortrait ? 1.5 : 1.2;
+
       // Cycle through shock/skeleton frames more slowly (250ms each)
       SHOCK_FRAMES.forEach((key, i) => {
         timers.push(scene.time.delayedCall(i * 250, () => {
           if (playerSprite.active) {
             playerSprite.setTexture(key);
-            // Make doll 30% bigger during thunder
-            playerSprite.setScale(playerSprite.scaleX * 1.3, playerSprite.scaleY * 1.3);
+            // Boost size during thunder
+            playerSprite.setScale(playerSprite.scaleX * skeletonBoost, playerSprite.scaleY * skeletonBoost);
           }
         }));
       });
@@ -153,6 +158,9 @@ function playThunder(scene, cloudView, playerSprite) {
 
     // Ensure we end on the final shock/fall frame
     playerSprite.setTexture(AssetKeys.LION_SHOCK_4);
+    // Maintain the same enlarged size as the skeleton during the fall (thunder only)
+    const skeletonBoost = isPortrait ? 1.5 : 1.2;
+    playerSprite.setScale(playerSprite.scaleX * skeletonBoost, playerSprite.scaleY * skeletonBoost);
 
     const groundY = scene.cloudManager.groundPeakY;
     const fallDist = groundY - playerSprite.y;

@@ -13,10 +13,20 @@ export default class ParallaxBackground {
     this.planeAgents = [];
 
     this._planeTick = (_t, delta) => this._updatePlanes(delta);
+    
+    // Background Lightning System
+    this._nextLightningTime = Date.now() + Phaser.Math.Between(8000, 15000);
+    this._lightningTick = () => {
+      if (Date.now() > this._nextLightningTime) {
+        this._triggerBackgroundLightning();
+        this._nextLightningTime = Date.now() + Phaser.Math.Between(10000, 22000);
+      }
+    };
 
     this._boundLayout = () => this.layout();
     scene.scale.on("resize", this._boundLayout);
     scene.events.on("update", this._planeTick);
+    scene.events.on("update", this._lightningTick);
     scene.events.once("shutdown", () => this.destroy());
 
     this.layout();
@@ -25,6 +35,7 @@ export default class ParallaxBackground {
   destroy() {
     this.scene.scale.off("resize", this._boundLayout);
     this.scene.events.off("update", this._planeTick);
+    this.scene.events.off("update", this._lightningTick);
     for (const o of this.objects) {
       if (o && o.destroy) o.destroy();
     }
@@ -127,6 +138,60 @@ export default class ParallaxBackground {
         this._respawnPlane(agent, cam, bandTop, bandH, pad, laneMargin);
       }
     }
+  }
+
+  _triggerBackgroundLightning() {
+    const scene = this.scene;
+    const cam = scene.cameras.main;
+    
+    // Pick random bolt image
+    const boltKeys = [
+      AssetKeys.LIGHTNING_BOLT_1,
+      AssetKeys.LIGHTNING_BOLT_2,
+      AssetKeys.LIGHTNING_BOLT_3,
+      AssetKeys.LIGHTNING_BOLT_4,
+      AssetKeys.LIGHTNING_BOLT_5
+    ];
+    const key = Phaser.Utils.Array.GetRandom(boltKeys);
+    
+    // Random position in sky
+    const rx = cam.worldView.x + Phaser.Math.Between(0, cam.worldView.width);
+    const ry = cam.worldView.y + Phaser.Math.Between(0, cam.worldView.height * 0.3);
+    
+    const bolt = scene.add.image(rx, ry, key)
+      .setOrigin(0.5, 0)
+      .setDepth(3) // Behind clouds (depth 5)
+      .setAlpha(0)
+      .setTint(0x99ccff); // Slight blue tint for ambient lightning
+      
+    // Flash background sky subtly
+    const flash = scene.add.rectangle(cam.worldView.centerX, cam.worldView.centerY, cam.worldView.width * 2, cam.worldView.height * 2, 0xffffff, 0)
+      .setDepth(2)
+      .setScrollFactor(0);
+
+    // Play sound (low volume for background)
+    if (scene.sound.mute === false) {
+      scene.sound.play(AssetKeys.SFX_THUNDER_STRIKE, { volume: 0.12 });
+    }
+
+    // Bolt sequence
+    scene.tweens.add({
+      targets: bolt,
+      alpha: 1,
+      duration: 50,
+      yoyo: true,
+      hold: 60,
+      onComplete: () => bolt.destroy()
+    });
+
+    // Sky flash sequence
+    scene.tweens.add({
+      targets: flash,
+      alpha: 0.15,
+      duration: 60,
+      yoyo: true,
+      onComplete: () => flash.destroy()
+    });
   }
 
   layout() {

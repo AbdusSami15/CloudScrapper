@@ -104,12 +104,21 @@ export default class UIManager {
     }
 
     this._muteContainer.on("pointerdown", () => {
+      // Tactile feedback
+      scene.tweens.add({
+        targets: this._muteContainer,
+        scale: 0.92,
+        duration: 80,
+        yoyo: true,
+        ease: "Quad.easeOut"
+      });
       this._toggleMuteControl();
     });
 
     this._muteCloudW = cw;
     this._muteCloudH = ch;
 
+    // Force unmuted visual on build
     this._syncMuteVisual();
   }
 
@@ -148,32 +157,36 @@ export default class UIManager {
     this._syncMuteVisual();
   }
 
-  _syncMuteVisual() {
+  _syncMuteVisual(forceState) {
     if (!this._muteIcon) return;
-    const muted = this.scene.sound.mute === true;
-    this._muteIcon.setText(muted ? "✕" : "♪");
+    const isMuted = (forceState !== undefined) ? forceState : this.scene.sound.mute;
+    this._muteIcon.setText(isMuted ? "✕" : "♪");
+    // Also change color slightly for extra visual feedback
+    this._muteIcon.setColor(isMuted ? "#94a3b8" : "#fde047");
   }
 
   _toggleMuteControl() {
-    const next = !this.scene.sound.mute;
-    this.scene.sound.setMute(next);
+    // Explicitly toggle the current state
+    const nextMuteState = !this.scene.sound.mute;
+    
+    this.scene.sound.setMute(nextMuteState);
 
     // Resume context on unmute if suspended (browser requirement)
-    if (!next && this.scene.sound.context && this.scene.sound.context.state === "suspended") {
+    if (!nextMuteState && this.scene.sound.context && this.scene.sound.context.state === "suspended") {
       this.scene.sound.context.resume();
     }
 
-    try {
-      localStorage.setItem(GAME_CONFIG.storageKeys.audioMuted, next ? "1" : "0");
-    } catch (_e) {
-      /* ignore quota / privacy mode */
-    }
+    // Sync visuals immediately with the KNOWN next state
+    this._syncMuteVisual(nextMuteState);
 
-    this._syncMuteVisual();
-
-    if (!next) {
+    if (!nextMuteState) {
       this.scene.resumeBackgroundMusic();
     }
+
+    // Still update storage just in case, though GameScene now overrides it on refresh
+    try {
+      localStorage.setItem(GAME_CONFIG.storageKeys.audioMuted, nextMuteState ? "1" : "0");
+    } catch (_e) {}
   }
 
   _repositionHtmlElements() {

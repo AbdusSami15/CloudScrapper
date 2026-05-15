@@ -13,10 +13,8 @@ export default class GameScene extends Phaser.Scene {
   constructor() { super("GameScene"); }
 
   create() {
-    const mutedPref =
-      typeof localStorage !== "undefined" &&
-      localStorage.getItem(GAME_CONFIG.storageKeys.audioMuted) === "1";
-    this.sound.setMute(!!mutedPref);
+    // Always start unmuted on refresh
+    this.sound.setMute(false);
 
     this.createBackground();
 
