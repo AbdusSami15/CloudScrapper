@@ -31,6 +31,5 @@ export function playLandingJuice(scene, x, y) {
 }
 
 export function playJumpJuice(scene, x, y) {
-  scene.cameras.main.flash(100, 255, 255, 255, 0.06);
   scene.cameras.main.shake(85, 0.002);
 }
