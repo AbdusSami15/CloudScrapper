@@ -163,11 +163,9 @@ export default class ParallaxBackground {
       .setDepth(3) // Behind clouds (depth 5)
       .setAlpha(0)
       .setTint(0x99ccff); // Slight blue tint for ambient lightning
-      
-    // Flash background sky subtly
-    const flash = scene.add.rectangle(cam.worldView.centerX, cam.worldView.centerY, cam.worldView.width * 2, cam.worldView.height * 2, 0xffffff, 0)
-      .setDepth(2)
-      .setScrollFactor(0);
+
+    // Brief full-screen flash (same as former jump juice) — only for ambient lightning
+    cam.flash(100, 255, 255, 255, 0.06);
 
     // Play sound (low volume for background)
     if (scene.sound.mute === false) {
@@ -182,15 +180,6 @@ export default class ParallaxBackground {
       yoyo: true,
       hold: 60,
       onComplete: () => bolt.destroy()
-    });
-
-    // Sky flash sequence
-    scene.tweens.add({
-      targets: flash,
-      alpha: 0.15,
-      duration: 60,
-      yoyo: true,
-      onComplete: () => flash.destroy()
     });
   }
 
