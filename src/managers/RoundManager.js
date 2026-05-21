@@ -204,7 +204,7 @@ export default class RoundManager {
     this.scene.player.showHappy();
     this.scene.uiManager.setCurrentMultiplier(this.currentMultiplier);
     this.scene.uiManager.refreshCashoutButton();
-    this.scene.uiManager.setStatus(`Safe! ${this.currentMultiplier.toFixed(2)}x locked`);
+    this.scene.uiManager.setStatus(`Safe! ${this.currentMultiplier.toFixed(2)} locked`);
 
     this.scene.cloudManager.advanceAfterLanding();
     const nextCloud = this.scene.cloudManager.getTargetCloud();

@@ -50,6 +50,7 @@ export default class BootScene extends Phaser.Scene {
 
     this.load.image(AssetKeys.LOGO, "assets/logo_CP.png");
     this.load.image(AssetKeys.UPPER_LOGO, "assets/upperlogo.png");
+    this.load.image(AssetKeys.UI_TAP_HINT, "assets/click.png");
 
     const lionJp = "assets/lion-jump-png";
     this.load.image(AssetKeys.LION_IDLE,  `${lionJp}/1-stand.png`);

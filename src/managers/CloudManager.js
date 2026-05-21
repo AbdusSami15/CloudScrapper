@@ -11,6 +11,9 @@ const BATCH_SIZE = 15;
 // Spawn more clouds when player is within this many of the top
 const REFILL_THRESHOLD = 5;
 
+/** Reference Y for lion feet on starting mound — landscape only (portrait uses 868 below). */
+const LANDSCAPE_GROUND_PEAK_REF_Y = 752;
+
 export default class CloudManager {
   constructor(scene) {
     this.scene = scene;
@@ -38,10 +41,10 @@ export default class CloudManager {
 
   get groundPeakY() {
     const isLandscape = this.scene.scale.width > this.scene.scale.height;
-    // Portrait: feet on mound (lower ref Y → lion sits slightly higher).
+    // Portrait (mobile): unchanged tuning.
     if (!isLandscape) return ry(this.scene, 868);
-    // Landscape / PC: crest of parallax hill — higher on screen than flat groundY so feet sit on peak.
-    return ry(this.scene, 678);
+    // Landscape (desktop/wide): older ref (678) sat feet above the parallax mound → reads “floating”.
+    return ry(this.scene, LANDSCAPE_GROUND_PEAK_REF_Y);
   }
 
   get stepSpacingY() {
@@ -155,6 +158,14 @@ export default class CloudManager {
     cloud.setAlpha(1);
     cloud.setScale(1);
     return cloud;
+  }
+
+  /**
+   * Index of the cloud the player last landed on.
+   * `-1` = still on ground before first landing; `0` = first sky cloud; `1` = second, etc.
+   */
+  getStandingCloudIndex() {
+    return this._playerCloudIdx;
   }
 
   /** The cloud the player is currently standing on */

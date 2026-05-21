@@ -31,6 +31,9 @@ const AssetKeys = {
   LOGO: "logo",
   UPPER_LOGO: "upper_logo",
 
+  /** Finger tap tutorial (`assets/click.png`) — shown until player reaches 2nd cloud */
+  UI_TAP_HINT: "ui_tap_hint",
+
   LION_IDLE: "lion_idle",
   LION_JUMP: "lion_jump",
   LION_HAPPY: "lion_happy",

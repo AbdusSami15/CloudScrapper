@@ -47,6 +47,9 @@ export default class GameScene extends Phaser.Scene {
     this.createLogo();
     this.bindUIControls();
     this.bindInput();
+    this._tapHintShowing = false;
+    this._tapHintDismissedByUser = false;
+    this._buildTapHint();
 
     // Resume audio context on first click (browser requirement)
     this.input.once("pointerdown", () => {
@@ -62,6 +65,90 @@ export default class GameScene extends Phaser.Scene {
     this._enterBettingVisuals();
     this.uiManager.setStatus("Place a bet and press PLAY");
     this.uiManager.refreshFromState();
+  }
+
+  update() {
+    this._syncTapHint();
+  }
+
+  /** Blinking tap cue (`assets/click.png`): hides after gameplay tap / Space, or 2nd cloud landing */
+  _buildTapHint() {
+    if (!this.textures.exists(AssetKeys.UI_TAP_HINT)) {
+      console.warn("[GameScene] Missing tap hint texture:", AssetKeys.UI_TAP_HINT);
+      return;
+    }
+    this.tapHint = this.add.image(0, 0, AssetKeys.UI_TAP_HINT)
+      .setOrigin(0.5, 1)
+      .setDepth(45)
+      .setVisible(false)
+      .setScrollFactor(1, 1);
+  }
+
+  _syncTapHint() {
+    if (!this.tapHint?.scene) return;
+
+    const gm = this.gameManager;
+    const cm = this.cloudManager;
+    const sp = this.player?.sprite;
+
+    const standing = cm?.getStandingCloudIndex?.() ?? 999;
+
+    const show =
+      standing < 1 &&
+      !this._tapHintDismissedByUser &&
+      sp?.visible &&
+      sp?.active &&
+      !this.player?.isDead &&
+      !gm.isState(GAME_STATES.BETTING) &&
+      !gm.isState(GAME_STATES.RESULT) &&
+      !gm.isState(GAME_STATES.LANDED_BAD) &&
+      !gm.isState(GAME_STATES.CASHOUT) &&
+      (
+        gm.isState(GAME_STATES.STARTING) ||
+        gm.isState(GAME_STATES.READY) ||
+        gm.isState(GAME_STATES.JUMPING) ||
+        gm.isState(GAME_STATES.LANDED_GOOD)
+      );
+
+    if (!show) {
+      if (this._tapHintShowing) {
+        this._tapHintShowing = false;
+        this.tweens.killTweensOf(this.tapHint);
+        this.tapHint.setVisible(false);
+      }
+      return;
+    }
+
+    const tw = rs(this, 76);
+    const tex = this.textures.get(AssetKeys.UI_TAP_HINT).getSourceImage();
+    const th = Math.max(1, tex.height * (tw / Math.max(tex.width, 1)));
+    this.tapHint.setDisplaySize(tw, th);
+
+    const lift = rs(this, 118);
+    this.tapHint.setPosition(sp.x, sp.y - lift);
+
+    if (!this._tapHintShowing) {
+      this._tapHintShowing = true;
+      this.tapHint.setAlpha(1);
+      this.tapHint.setVisible(true);
+      this.tweens.add({
+        targets:    this.tapHint,
+        alpha:      0.28,
+        duration:   520,
+        yoyo:       true,
+        repeat:     -1,
+        ease:       "Sine.easeInOut"
+      });
+    }
+  }
+
+  /** First tap / Space above playfield kills the blink tween immediately */
+  _hideTapHintImmediate() {
+    this._tapHintDismissedByUser = true;
+    if (!this.tapHint?.scene || !this._tapHintShowing) return;
+    this._tapHintShowing = false;
+    this.tweens.killTweensOf(this.tapHint);
+    this.tapHint.setVisible(false);
   }
 
   // ════════════════════════════════════════════════════════════════════════
@@ -129,6 +216,7 @@ export default class GameScene extends Phaser.Scene {
       this._enterBettingVisuals();
       this.resumeBackgroundMusic();
     } else if (next === GAME_STATES.STARTING) {
+      this._tapHintDismissedByUser = false;
       this._enterRoundVisuals();
     }
   }
@@ -179,10 +267,14 @@ export default class GameScene extends Phaser.Scene {
     this.input.on("pointerdown", (pointer) => {
       if (this.uiManager.isPointerOverMuteControl(pointer)) return;
       if (pointer.y >= this.uiManager.getBottomPanelTop()) return;
+      this._hideTapHintImmediate();
       this._tryJumpInput();
     });
 
-    this.input.keyboard.on("keydown-SPACE", () => this._tryJumpInput());
+    this.input.keyboard.on("keydown-SPACE", () => {
+      this._hideTapHintImmediate();
+      this._tryJumpInput();
+    });
   }
 
   _tryJumpInput() {

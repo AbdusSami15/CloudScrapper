@@ -8,8 +8,8 @@ import AssetKeys                      from "./AssetKeys.js";
  *
  *   • State-driven primary button:
  *       BETTING        → "PLAY"
- *       READY (idx≥1)  → "CASH OUT  $X"
- *       READY (idx=0)  → "JUMP"
+ *       READY (idx≥1)  → "CASH OUT" (no payout line)
+ *       READY (idx=0)  → "CASH OUT" greyed — jump via tap above panel
  *       JUMPING/LANDED → disabled
  *       RESULT         → "PLAY AGAIN"
  *   • Locks bet/difficulty controls outside BETTING.
@@ -23,7 +23,7 @@ export default class UIManager {
 
     this._displayedBalance = scene.gameManager.balance;
     this._balanceTween     = null;
-    this._buttonMode       = "play";   // play | jump | cashout | replay | wait
+    this._buttonMode       = "play";   // play | cashout | cashout_disabled | replay | wait | stop
     this._locked           = false;
 
     const sw = scene.scale.width;
@@ -428,6 +428,7 @@ export default class UIManager {
       .setInteractive({ useHandCursor: true }).setScrollFactor(0)
       .setDepth(104);
     this._playZone.on("pointerdown", () => {
+      if (!this._playZone.input?.enabled) return;
       // If mode is 'play', use start sfx, otherwise click
       if (this._buttonMode === "play" || this._buttonMode === "replay") {
         this._playStart();
@@ -1000,10 +1001,9 @@ export default class UIManager {
     switch (this._buttonMode) {
       case "play":    this.controls?.onPlay?.();    break;
       case "stop":    this.scene.gameManager.stopAutoPlay(); break;
-      case "jump":    this.controls?.onJump?.();    break;
       case "cashout": this.controls?.onCashout?.(); break;
       case "replay":  this.controls?.onReplay?.();  break;
-      // wait/disabled → no-op
+      // cashout_disabled / wait → no-op (cashout requires a landed multiplier)
     }
   }
 
@@ -1031,12 +1031,14 @@ export default class UIManager {
             "PLAY", "");
         }
         this._hideMultiplierBadge();
+        this._setPlayButtonInteractive(true);
         break;
 
       case GAME_STATES.STARTING:
         this._setButtonMode("wait",
           { fill: 0x475569, border: 0x1f2937 },
           "...", "");
+        this._setPlayButtonInteractive(true);
         break;
 
       case GAME_STATES.READY: {
@@ -1044,11 +1046,14 @@ export default class UIManager {
           this._setButtonMode("cashout",
             { fill: 0xf59e0b, border: 0x92400e },
             "CASH OUT",
-            `$${this._fmtMoney(round.pendingPayout)}`);
+            "");
+          this._setPlayButtonInteractive(true);
         } else {
-          this._setButtonMode("jump",
-            { fill: 0x3b82f6, border: 0x1e3a8a },
-            "JUMP", "");
+          this._setButtonMode("cashout_disabled",
+            { fill: 0x475569, border: 0x334155 },
+            "CASH OUT",
+            "");
+          this._setPlayButtonInteractive(false);
         }
         this._showMultiplierBadge(round?.lockedMultiplier ?? 1);
         break;
@@ -1061,21 +1066,20 @@ export default class UIManager {
         this._setButtonMode("wait",
           { fill: 0x475569, border: 0x1f2937 },
           "...", "");
+        this._setPlayButtonInteractive(true);
         break;
 
       case GAME_STATES.RESULT:
         this._setButtonMode("replay",
           { fill: 0x22c55e, border: 0x15803d },
           "PLAY AGAIN", "");
+        this._setPlayButtonInteractive(true);
         break;
     }
   }
 
   refreshCashoutButton() {
-    if (this._buttonMode === "cashout") {
-      const round = this.scene.roundManager;
-      this._playSubLabel.setText(`$${this._fmtMoney(round.pendingPayout)}`);
-    }
+    // Primary button no longer shows payout amount — kept for callers / future use
   }
 
   _setButtonMode(mode, colors, label, subLabel) {
@@ -1084,9 +1088,14 @@ export default class UIManager {
     this._playLabel.setText(label);
     this._playSubLabel.setText(subLabel || "");
 
-    const dim = (mode === "wait");
+    const dim = (mode === "wait" || mode === "cashout_disabled");
     this._playLabel.setAlpha(dim ? 0.7 : 1);
     this._playSubLabel.setAlpha(dim ? 0.7 : 1);
+  }
+
+  _setPlayButtonInteractive(on) {
+    if (!this._playZone?.input) return;
+    this._playZone.input.enabled = on;
   }
 
   _setSubButtonsEnabled(enabled) {
@@ -1118,13 +1127,13 @@ export default class UIManager {
   setStatus(text)         { this.statusText.setText(text); }
 
   setCurrentMultiplier(value) {
-    this.statusText.setText(`Next reward: ${value.toFixed(2)}x`);
+    this.statusText.setText(`Next reward: ${value.toFixed(2)}`);
     this._showMultiplierBadge(value);
   }
 
   _showMultiplierBadge(value) {
     if (!this.multiplierBadge) return;
-    this.multiplierBadge.setText(`${value.toFixed(2)}x`);
+    this.multiplierBadge.setText(`${value.toFixed(2)}`);
     this.multiplierBadge.setVisible(true);
   }
 
