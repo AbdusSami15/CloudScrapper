@@ -119,13 +119,14 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    const tw = rs(this, 76);
+    const tw = rs(this, 92);
     const tex = this.textures.get(AssetKeys.UI_TAP_HINT).getSourceImage();
     const th = Math.max(1, tex.height * (tw / Math.max(tex.width, 1)));
     this.tapHint.setDisplaySize(tw, th);
 
-    const lift = rs(this, 118);
-    this.tapHint.setPosition(sp.x, sp.y - lift);
+    const shiftRight = rs(this, 100);
+    const lift = rs(this, 138);
+    this.tapHint.setPosition(sp.x + shiftRight, sp.y - lift);
 
     if (!this._tapHintShowing) {
       this._tapHintShowing = true;
